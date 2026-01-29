@@ -1,4 +1,4 @@
-import { getServerSession } from "next-auth";
+import { getServerSession as getNextAuthSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 
@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
  * Use em Server Components e Server Actions
  */
 export async function getServerSession() {
-  return await getServerSession(authOptions);
+  return await getNextAuthSession(authOptions);
 }
 
 /**
