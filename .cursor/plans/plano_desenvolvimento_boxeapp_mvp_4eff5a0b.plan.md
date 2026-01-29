@@ -58,7 +58,7 @@ flowchart LR
 2. **Dependências** ✅ *Concluído*
   - Instalar: `next-auth`, `@auth/drizzle-adapter` (ou adapter manual), `react-hook-form`, `@hookform/resolvers`, `zod`, `date-fns`, `bcryptjs` + `@types/bcryptjs` (seeds).
   - **PWA**: `next-pwa` ou `@ducanh2912/next-pwa` para service worker e manifest.
-3. **shadcn/ui**
+3. **shadcn/ui** ✅ *Concluído*
   - Adicionar componentes usados no PRD: `input`, `label`, `card`, `table`, `form`, `select`, `checkbox`, `badge`, `dropdown-menu`, `dialog`, `alert`, `tabs`, `sheet` (drawer mobile), `drawer` (opcional). Comando: `npx shadcn@latest add <component>`.
 4. **PWA - Configuração mobile-first**
   - Criar `public/manifest.json` (nome, short_name, description, start_url, display: "standalone", theme_color, background_color, ícones).
