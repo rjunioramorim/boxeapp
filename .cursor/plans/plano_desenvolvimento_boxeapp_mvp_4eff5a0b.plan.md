@@ -51,11 +51,11 @@ flowchart LR
 
 **Fazer:**
 
-1. **Drizzle**
+1. **Drizzle** ✅ *Concluído*
   - Criar `drizzle.config.ts` (driver pg, schema em `./lib/db/schema.ts`, out `./drizzle`).
   - Criar `lib/db/index.ts` (export do client Drizzle usando `DATABASE_URL`).
   - Em `package.json`: scripts `db:generate`, `db:migrate`, `db:studio` (drizzle-kit).
-2. **Dependências**
+2. **Dependências** ✅ *Concluído*
   - Instalar: `next-auth`, `@auth/drizzle-adapter` (ou adapter manual), `react-hook-form`, `@hookform/resolvers`, `zod`, `date-fns`, `bcryptjs` + `@types/bcryptjs` (seeds).
   - **PWA**: `next-pwa` ou `@ducanh2912/next-pwa` para service worker e manifest.
 3. **shadcn/ui**
