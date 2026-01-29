@@ -1,0 +1,44 @@
+# Desenvolvimento local: app Next.js + Postgres.
+# Uso: docker compose -f docker-compose.dev.yml up -d
+# DATABASE_URL no host: postgresql://boxeapp:boxeapp@localhost:5432/boxeapp
+# Migrations: npm run db:migrate (no host, com .env.local apontando para localhost:5432).
+
+services:
+  postgres:
+    image: postgres:16.3-alpine
+    container_name: boxeapp-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-boxeapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-boxeapp}
+      POSTGRES_DB: ${POSTGRES_DB:-boxeapp}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-boxeapp} -d ${POSTGRES_DB:-boxeapp}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: boxeapp-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-boxeapp}:${POSTGRES_PASSWORD:-boxeapp}@postgres:5432/${POSTGRES_DB:-boxeapp}
+      NODE_ENV: production
+      TZ: America/Sao_Paulo
+    env_file:
+      - .env.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_dev_data:

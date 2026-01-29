@@ -1,0 +1,30 @@
+# Produção: apenas a aplicação. Postgres já existe no servidor (fora deste stack).
+# Traefik + Docker Swarm: use com `docker stack deploy` ou importe no Portainer.
+# Variáveis DATABASE_URL, NEXTAUTH_SECRET, etc. vêm do ambiente (secrets ou env no Portainer).
+
+services:
+  app:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-boxeapp}:${IMAGE_TAG:-latest}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+      labels:
+        # Traefik (Swarm): roteamento HTTP/HTTPS
+        - "traefik.enable=true"
+        - "traefik.http.routers.boxeapp.rule=Host(`${TRAEFIK_HOST}`)"
+        - "traefik.http.routers.boxeapp.entrypoints=websecure"
+        - "traefik.http.routers.boxeapp.tls=true"
+        - "traefik.http.services.boxeapp.loadbalancer.server.port=3000"
+    environment:
+      NODE_ENV: production
+      TZ: America/Sao_Paulo
+      # DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL, CRON_SECRET etc. definidos no stack/env
+      # Env: definir no Portainer/stack (DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL, CRON_SECRET).
+      # Opcional: env_file - .env.production no servidor (não commitar).
+      # Sem build: imagem vem do registry (buildada no CI para linux/arm64).
+
+      # Para docker compose (não Swarm), use:
+      #   docker compose -f docker-compose.prod.yml up -d
+      # e remova ou ignore a seção `deploy` se o Traefik estiver configurado por outro meio (ex.: proxy reverso no host).

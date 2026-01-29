@@ -1,0 +1,96 @@
+# Build e deploy para VPS ARM (Docker Swarm / Portainer + Traefik).
+# Secrets: GHCR_TOKEN (ou DOCKER_PASSWORD), SSH_PRIVATE_KEY, CRON_SECRET (opcional para jobs).
+# Variáveis no repositório ou env: VPS_HOST, VPS_USER, REGISTRY (ex.: ghcr.io), IMAGE_NAME (ex.: owner/boxeapp).
+
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/boxeapp
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push (ARM64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy compose to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.VPS_HOST }}
+          username: ${{ vars.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.prod.yml"
+          target: "${{ vars.DEPLOY_PATH }}"
+
+      - name: Deploy to VPS (SSH + Docker Stack)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.VPS_HOST }}
+          username: ${{ vars.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin 2>/dev/null || true
+            export REGISTRY=${{ env.REGISTRY }}
+            export IMAGE_NAME=${{ github.repository_owner }}/boxeapp
+            export IMAGE_TAG=latest
+            export TRAEFIK_HOST=${{ vars.TRAEFIK_HOST }}
+            cd ${{ vars.DEPLOY_PATH }}
+            envsubst < docker-compose.prod.yml > docker-compose.prod.resolved.yml
+            docker pull $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+            docker stack deploy -c docker-compose.prod.resolved.yml boxeapp --with-registry-auth
+            docker system prune -f
+        env:
+          REGISTRY: ghcr.io

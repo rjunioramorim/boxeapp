@@ -1,0 +1,192 @@
+---
+alwaysApply: true
+---
+
+# Cursor Rules — Projeto Fullstack Next.js 16
+
+Estas regras definem **como o agente deve se comportar** ao criar, editar ou revisar código neste repositório.
+
+Elas são obrigatórias e devem ser seguidas em conjunto com as skills disponíveis em `.cursor/skills`.
+
+---
+
+## 1. Regras Gerais
+
+- Sempre priorize **clareza e previsibilidade** ao invés de abstrações prematuras
+- Tipagem forte é obrigatória
+- Nunca gerar código sem respeitar a arquitetura existente
+- Ao menor sinal de ambiguidade, **pergunte antes de implementar**
+- Nunca inventar padrões fora das skills definidas
+
+---
+
+## 2. Uso de Skills
+
+O agente **DEVE** escolher a skill correta com base no contexto do arquivo:
+
+### Mapeamento por pasta
+
+| Pasta / Arquivo                | Skill obrigatória            |
+|--------------------------------|------------------------------|
+| `src/app/**`                   | `next16-frontend`            |
+| `src/components/**`            | `ui-design-system`           |
+| `src/stores/**`                | `zustand-store`              |
+| `src/actions/**`               | `server-actions`             |
+| `src/db/**`                    | `drizzle-database`           |
+| `src/repositories/**`          | `drizzle-database`           |
+| `Dockerfile`, `docker-compose` | `docker-environment`         |
+
+Se múltiplas pastas estiverem envolvidas, **aplique todas as skills relevantes**.
+
+---
+
+## 3. Regras de Frontend (Next.js 16)
+
+- Server Components são o padrão
+- `"use client"` apenas quando estritamente necessário
+- É proibido:
+  - Lógica de negócio em componentes
+  - Acesso direto ao banco
+  - Uso de stores para dados persistentes
+- Server Actions devem ser usadas para mutações
+- Data fetching deve ocorrer no servidor sempre que possível
+
+---
+
+## 4. Regras de UI
+
+- Use Tailwind CSS como padrão
+- Não criar CSS customizado sem necessidade real
+- Não modificar diretamente componentes em `components/ui`
+- Manter consistência visual
+- Componentes devem ser pequenos e reutilizáveis
+
+---
+
+## 5. Regras de Estado (Zustand)
+
+- Zustand é **exclusivamente client-side**
+- Usar apenas para:
+  - Estado de UI
+  - Seleções temporárias
+  - Filtros
+- É proibido:
+  - Persistir dados de negócio
+  - Replicar estado do backend
+- Cada store deve ter responsabilidade única
+
+---
+
+## 6. Regras de Server Actions
+
+- Toda mutação deve passar por uma Server Action
+- Validar inputs com Zod
+- Nunca confiar em dados vindos do client
+- Retornar erros tipados
+- Actions devem ser pequenas e previsíveis
+
+---
+
+## 7. Regras de Banco de Dados
+
+- Nunca acessar o banco fora de repositories
+- Schemas devem estar em `src/db/schema`
+- Toda alteração estrutural exige migration
+- Queries devem ser type-safe
+- Usar transações quando necessário
+
+---
+
+## 8. Regras de Docker
+
+- Dockerfile deve ser multi-stage
+- Não incluir secrets no repositório
+- Usar `.env.example`
+- Builds devem ser reprodutíveis
+
+---
+
+## 9. Revisão de Código
+
+Ao revisar código, o agente deve:
+- Identificar violações de arquitetura
+- Sugerir melhorias alinhadas às skills
+- Nunca sugerir soluções fora do stack definido
+- Priorizar simplicidade e legibilidade
+
+---
+
+## 10. Regra Final
+
+Se uma implementação:
+- Viola qualquer regra acima
+- Introduz ambiguidade
+- Mistura responsabilidades
+
+➡️ **PARE e pergunte antes de continuar.**
+
+---
+
+## 11. Regras de Testes
+
+Testes são obrigatórios para código crítico.
+
+---
+
+### 11.1 Mapeamento de Skills de Teste
+
+| Contexto                          | Skill obrigatória        |
+|----------------------------------|--------------------------|
+| Funções puras / services          | `unit-testing`           |
+| Server Actions / repositories    | `integration-testing`    |
+| Fluxos críticos da aplicação     | `e2e-testing`            |
+
+---
+
+### 11.2 Regras Gerais de Teste
+
+- Testes devem ser:
+  - Legíveis
+  - Determinísticos
+  - Isolados
+- Não duplicar lógica da implementação
+- Evitar snapshots desnecessários
+- Falhas devem ser claras
+
+---
+
+### 11.3 Unit Tests
+
+- Não acessar banco
+- Não renderizar UI
+- Mockar dependências externas
+- Testar regras isoladas
+
+---
+
+### 11.4 Integration Tests
+
+- Usar banco real (isolado)
+- Executar migrations
+- Não mockar repositories
+- Validar efeitos reais
+
+---
+
+### 11.5 E2E Tests
+
+- Simular comportamento do usuário
+- Testar apenas fluxos críticos
+- Evitar dependência de detalhes visuais
+- Priorizar estabilidade
+
+---
+
+### 11.6 Regra Final de Testes
+
+Se uma funcionalidade:
+- Altera regra de negócio
+- Altera persistência
+- Afeta fluxo crítico
+
+➡️ **Teste é obrigatório.**
