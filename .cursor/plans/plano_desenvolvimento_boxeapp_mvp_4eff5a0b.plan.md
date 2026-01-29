@@ -70,20 +70,20 @@ flowchart LR
   - Garantir que `globals.css` e componentes usam classes mobile-first (ex.: `flex-col md:flex-row`, `text-sm md:text-base`).
   - Botões e inputs: tamanhos mínimos touch-friendly (min-height 44px, padding adequado).
 6. **Ambiente** ✅ *Concluído*
-   - Garantir que com `docker compose -f docker-compose.dev.yml up -d postgres` (ou o compose de dev que você usa) o Postgres sobe; criar `.env.local` a partir de `.env.example` com `DATABASE_URL` apontando para `localhost:5432`.
+  - Garantir que com `docker compose -f docker-compose.dev.yml up -d postgres` (ou o compose de dev que você usa) o Postgres sobe; criar `.env.local` a partir de `.env.example` com `DATABASE_URL` apontando para `localhost:5432`.
 
 ---
 
 ## FASE 2: Schema e autenticação (2 dias)
 
-1. **Schema Drizzle** (`lib/db/schema.ts`)
+1. **Schema Drizzle** (`lib/db/schema.ts`) ✅ *Concluído*
   - Tabelas conforme PRD seção 3: `users`, `planos`, `aulas`, `planos_aulas`, `alunos`, `matriculas`, `matriculas_aulas`, `pagamentos`, `agendamentos`.
   - Enums: tipo plano (INDIVIDUAL, COLETIVO), status aluno (ATIVO, INATIVO, SUSPENSO), status matrícula (ATIVA, CANCELADA, SUSPENSA), status pagamento (PENDENTE, PAGO, ATRASADO, CANCELADO), status agendamento (AGENDADO, PRESENTE, AUSENTE, CANCELADO), tipo agendamento (AUTOMATICO, MANUAL).
   - Campos: UUIDs, `planos.qtd_dias` (integer, default 3), `matriculas_aulas.horario` e `dias_semana` (nullable), demais conforme PRD.
-  - Relações entre tabelas (references).
+  - Relações entre tabelas (references) e Drizzle Relations para queries com `with`.
   - Constraint única em `agendamentos`: `(aula_id, aluno_id, data, horario)`.
 2. **Migrations**
-  - Rodar `npm run db:generate` e `npm run db:migrate` (local contra Postgres do compose).
+  - Rodar `npm run db:generate` e `npm run db:migrate` (local contra Postgres do compose). Migration gerada em `drizzle/0000_new_rocket_racer.sql`; aplicar quando Postgres estiver disponível com `DATABASE_URL` correta.
 3. **Seeds**
   - Script (ex.: `lib/db/seed.ts` ou `scripts/seed.ts`) que cria um usuário admin (email + hash bcrypt da senha) na tabela `users`. Executável com `tsx scripts/seed.ts` ou script `db:seed` no `package.json`.
 4. **NextAuth**
