@@ -113,7 +113,7 @@ flowchart LR
 
 ---
 
-## FASE 3: CRUD de Planos (1-2 dias)
+## FASE 3: CRUD de Planos (1-2 dias) ✅ *Concluído*
 
 1. **Queries** em `lib/db/queries/planos.ts`: `getAll`, `getById`, `create`, `update`, `delete` (e listar com aulas vinculadas, se necessário para o form).
 2. **Server Actions** em `app/(dashboard)/planos/actions.ts` (ou `lib/actions/planos.ts`): create, update, delete; validação com zod; chamar queries.
