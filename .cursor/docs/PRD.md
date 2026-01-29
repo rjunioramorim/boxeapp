@@ -304,7 +304,7 @@ Desenvolver um sistema web para gerenciar confirmações de pagamento e matrícu
 ---
 
 ## 6. Interface do Usuário (Telas)
-
+- Todo o webapp deve ser responsivo e voltado para o mobile pois será um pwa
 ### 6.1 Autenticação
 - `/login` - Formulário de login (email + senha)
 
