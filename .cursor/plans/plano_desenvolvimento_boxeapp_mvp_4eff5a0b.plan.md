@@ -66,11 +66,11 @@ flowchart LR
   - Configurar `next.config.ts` com `next-pwa` (ou usar `@ducanh2912/next-pwa` com `withPWA`).
   - Em `app/layout.tsx`: meta tags viewport (`width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no`), theme-color, apple-mobile-web-app-capable.
   - Service worker: configurar cache de assets estáticos e rotas; estratégia NetworkFirst para API, CacheFirst para assets.
-5. **Mobile-first CSS/Tailwind**
+5. **Mobile-first CSS/Tailwind** ✅ *Concluído*
   - Garantir que `globals.css` e componentes usam classes mobile-first (ex.: `flex-col md:flex-row`, `text-sm md:text-base`).
   - Botões e inputs: tamanhos mínimos touch-friendly (min-height 44px, padding adequado).
-6. **Ambiente**
-  - Garantir que com `docker compose -f docker-compose.dev.yml up -d postgres` (ou o compose de dev que você usa) o Postgres sobe; criar `.env.local` a partir de `.env.example` com `DATABASE_URL` apontando para `localhost:5432`.
+6. **Ambiente** ✅ *Concluído*
+   - Garantir que com `docker compose -f docker-compose.dev.yml up -d postgres` (ou o compose de dev que você usa) o Postgres sobe; criar `.env.local` a partir de `.env.example` com `DATABASE_URL` apontando para `localhost:5432`.
 
 ---
 

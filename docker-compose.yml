@@ -1,7 +1,7 @@
-# Desenvolvimento local: app Next.js + Postgres.
-# Uso: docker compose -f docker-compose.dev.yml up -d
+# Desenvolvimento local (app + Postgres em containers).
+# Só Postgres no Docker + app no host: use docker-compose.dev.yml.
+# Uso: docker compose up -d postgres  (ou -f docker-compose.dev.yml para só DB).
 # DATABASE_URL no host: postgresql://boxeapp:boxeapp@localhost:5432/boxeapp
-# Migrations: npm run db:migrate (no host, com .env.local apontando para localhost:5432).
 
 services:
   postgres:

@@ -1,17 +1,29 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Ambiente local
+
+1. **Variáveis de ambiente**  
+   Copie o exemplo e ajuste se precisar:  
+   `cp .env.example .env.local`  
+   O `.env.example` já traz `DATABASE_URL=postgresql://boxeapp:boxeapp@localhost:5432/boxeapp` para uso com o Postgres em Docker.
+
+2. **Subir só o Postgres (app no host)**  
+   ```bash
+   docker compose -f docker-compose.dev.yml up -d postgres
+   ```  
+   Depois: `npm run dev` e `npm run db:migrate` (com `.env.local` apontando para `localhost:5432`).
+
+3. **Ou subir app + Postgres em containers**  
+   ```bash
+   docker compose up -d
+   ```
+
 ## Getting Started
 
-First, run the development server:
+Primeiro, tenha o Postgres rodando (passo 2 acima). Depois:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

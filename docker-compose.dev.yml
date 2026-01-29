@@ -1,0 +1,26 @@
+# Desenvolvimento local: apenas Postgres.
+# Uso: docker compose -f docker-compose.dev.yml up -d postgres
+# DATABASE_URL no host: postgresql://boxeapp:boxeapp@localhost:5432/boxeapp
+# Depois: npm run dev (app no host) e npm run db:migrate (com .env.local).
+
+services:
+  postgres:
+    image: postgres:16.3-alpine
+    container_name: boxeapp-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-boxeapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-boxeapp}
+      POSTGRES_DB: ${POSTGRES_DB:-boxeapp}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-boxeapp} -d ${POSTGRES_DB:-boxeapp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_dev_data:
