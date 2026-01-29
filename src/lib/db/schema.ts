@@ -225,8 +225,14 @@ export const aulasRelations = relations(aulas, ({ many }) => ({
 }));
 
 export const planosAulasRelations = relations(planosAulas, ({ one }) => ({
-  plano: one(planos),
-  aula: one(aulas),
+  plano: one(planos, {
+    fields: [planosAulas.planoId],
+    references: [planos.id],
+  }),
+  aula: one(aulas, {
+    fields: [planosAulas.aulaId],
+    references: [aulas.id],
+  }),
 }));
 
 export const alunosRelations = relations(alunos, ({ many }) => ({
@@ -235,24 +241,48 @@ export const alunosRelations = relations(alunos, ({ many }) => ({
 }));
 
 export const matriculasRelations = relations(matriculas, ({ one, many }) => ({
-  aluno: one(alunos),
-  plano: one(planos),
+  aluno: one(alunos, {
+    fields: [matriculas.alunoId],
+    references: [alunos.id],
+  }),
+  plano: one(planos, {
+    fields: [matriculas.planoId],
+    references: [planos.id],
+  }),
   matriculasAulas: many(matriculasAulas),
   pagamentos: many(pagamentos),
   agendamentos: many(agendamentos),
 }));
 
 export const matriculasAulasRelations = relations(matriculasAulas, ({ one }) => ({
-  matricula: one(matriculas),
-  aula: one(aulas),
+  matricula: one(matriculas, {
+    fields: [matriculasAulas.matriculaId],
+    references: [matriculas.id],
+  }),
+  aula: one(aulas, {
+    fields: [matriculasAulas.aulaId],
+    references: [aulas.id],
+  }),
 }));
 
 export const pagamentosRelations = relations(pagamentos, ({ one }) => ({
-  matricula: one(matriculas),
+  matricula: one(matriculas, {
+    fields: [pagamentos.matriculaId],
+    references: [matriculas.id],
+  }),
 }));
 
 export const agendamentosRelations = relations(agendamentos, ({ one }) => ({
-  aula: one(aulas),
-  aluno: one(alunos),
-  matricula: one(matriculas),
+  aula: one(aulas, {
+    fields: [agendamentos.aulaId],
+    references: [aulas.id],
+  }),
+  aluno: one(alunos, {
+    fields: [agendamentos.alunoId],
+    references: [alunos.id],
+  }),
+  matricula: one(matriculas, {
+    fields: [agendamentos.matriculaId],
+    references: [matriculas.id],
+  }),
 }));

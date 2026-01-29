@@ -86,23 +86,30 @@ flowchart LR
   - Relações entre tabelas (references) e Drizzle Relations para queries com `with`.
   - Constraint única em `agendamentos`: `(aula_id, aluno_id, data, horario)`.
 
-2. **Migrations**
+2. **Migrations** ✅ *Concluído*
 
   - Rodar `npm run db:generate` e `npm run db:migrate` (local contra Postgres do compose). Migration gerada em `drizzle/0000_new_rocket_racer.sql`; aplicar quando Postgres estiver disponível com `DATABASE_URL` correta.
 
-3. **Seeds**
+3. **Seeds** ✅ *Concluído*
 
-  - Script (ex.: `lib/db/seed.ts` ou `scripts/seed.ts`) que cria um usuário admin (email + hash bcrypt da senha) na tabela `users`. Executável com `tsx scripts/seed.ts` ou script `db:seed` no `package.json`.
+  - Script `src/lib/db/seed.ts` que cria um usuário admin (email + hash bcrypt da senha) na tabela `users`. Executável com `npm run db:seed` ou `tsx src/lib/db/seed.ts`.
+  - Suporta variáveis de ambiente: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` (valores padrão se não definidos).
+  - Verifica se usuário já existe antes de criar.
 
-4. **NextAuth**
+4. **NextAuth** ✅ *Concluído*
 
-  - `app/api/auth/[...nextauth]/route.ts`: Credentials Provider; comparar email/senha com `users` (via Drizzle); session com id/email/name.
-  - `lib/auth.ts`: `getServerSession`, helper para proteger rotas (ex.: redirect se não autenticado).
-  - Middleware: em `middleware.ts` proteger rotas `/dashboard`, `/planos`, `/aulas`, `/alunos`, `/pagamentos`, `/agendamentos`; redirecionar não autenticados para `/login`.
+  - `src/app/api/auth/[...nextauth]/route.ts`: Credentials Provider implementado; compara email/senha com `users` (via Drizzle); session com id/email/name.
+  - `src/lib/auth.ts`: `getServerSession`, `requireAuth`, `getUserId` helpers para proteger rotas e obter dados da sessão.
+  - `src/middleware.ts`: Middleware configurado para proteger rotas `/dashboard`, `/planos`, `/aulas`, `/alunos`, `/pagamentos`, `/agendamentos`; redireciona não autenticados para `/login`.
+  - `src/types/next-auth.d.ts`: Tipos customizados para Session, User e JWT com id, email e name.
 
-5. **Login**
+5. **Login** ✅ *Concluído*
 
-  - Página `app/login/page.tsx`: formulário (email, senha) com react-hook-form + zod; submit chama `signIn("credentials", ...)`; redirect para `/dashboard` em sucesso.
+  - Página `src/app/login/page.tsx`: formulário (email, senha) com react-hook-form + zod implementado; submit chama `signIn("credentials", ...)`; redirect para `/dashboard` em sucesso.
+  - Design mobile-first: inputs com `min-h-[44px]` (touch-friendly), layout responsivo com Card.
+  - Validação com zod: email válido e senha obrigatória.
+  - Tratamento de erros: exibe mensagens de erro amigáveis.
+  - `src/components/providers/session-provider.tsx`: SessionProvider configurado no layout para suporte ao NextAuth no cliente.
 
 ---
 

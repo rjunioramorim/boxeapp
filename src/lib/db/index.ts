@@ -1,6 +1,13 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
+import * as dotenv from "dotenv";
+import { resolve } from "path";
+
+// Carregar variáveis de ambiente se não estiverem definidas (útil para scripts)
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: resolve(process.cwd(), ".env.local") });
+}
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL não está definida nas variáveis de ambiente");
@@ -11,3 +18,4 @@ const pool = new Pool({
 });
 
 export const db = drizzle(pool, { schema });
+export { pool };
