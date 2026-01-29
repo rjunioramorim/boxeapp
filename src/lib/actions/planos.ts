@@ -4,43 +4,20 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth";
 import {
-  getAllPlanos,
-  getPlanoById,
-  createPlano,
-  updatePlano,
-  deletePlano,
-} from "@/lib/db/queries/planos";
-
-// Schema de validação para criar/atualizar plano
-const planoSchema = z.object({
-  nome: z.string().min(1, "Nome é obrigatório"),
-  tipo: z.enum(["INDIVIDUAL", "COLETIVO"], {
-    message: "Tipo deve ser INDIVIDUAL ou COLETIVO",
-  }),
-  valor: z
-    .string()
-    .min(1, "Valor é obrigatório")
-    .refine(
-      (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
-      "Valor deve ser um número positivo"
-    ),
-  qtdDias: z
-    .number()
-    .int("Quantidade de dias deve ser um número inteiro")
-    .min(1, "Quantidade de dias deve ser pelo menos 1")
-    .max(31, "Quantidade de dias não pode ser maior que 31")
-    .optional(),
-  ativo: z.boolean().optional(),
-});
-
-const planoUpdateSchema = planoSchema.partial();
+  listarPlanosService,
+  buscarPlanoService,
+  criarPlanoService,
+  atualizarPlanoService,
+  deletarPlanoService,
+} from "@/lib/services/planos";
+import { planoSchema, planoUpdateSchema } from "@/lib/schemas/planos";
 
 /**
  * Lista todos os planos
  */
 export async function listarPlanos() {
   await requireAuth();
-  return await getAllPlanos();
+  return await listarPlanosService();
 }
 
 /**
@@ -48,10 +25,7 @@ export async function listarPlanos() {
  */
 export async function buscarPlano(id: string) {
   await requireAuth();
-  if (!id) {
-    throw new Error("ID do plano é obrigatório");
-  }
-  return await getPlanoById(id);
+  return await buscarPlanoService(id);
 }
 
 /**
@@ -73,22 +47,16 @@ export async function criarPlano(formData: FormData) {
   const validated = planoSchema.parse(rawData);
 
   try {
-    const novoPlano = await createPlano({
-      nome: validated.nome,
-      tipo: validated.tipo,
-      valor: validated.valor,
-      qtdDias: validated.qtdDias,
-      ativo: validated.ativo,
-    });
+    const novoPlano = await criarPlanoService(validated);
 
     revalidatePath("/planos");
     return { success: true, data: novoPlano };
   } catch (error) {
     if (error instanceof z.ZodError) {
-    return {
-      success: false,
-      error: error.issues.map((e) => e.message).join(", "),
-    };
+      return {
+        success: false,
+        error: error.issues.map((e) => e.message).join(", "),
+      };
     }
     return {
       success: false,
@@ -125,21 +93,17 @@ export async function atualizarPlano(id: string, formData: FormData) {
   const validated = planoUpdateSchema.parse(rawData);
 
   try {
-    const planoAtualizado = await updatePlano(id, validated);
-
-    if (!planoAtualizado) {
-      return { success: false, error: "Plano não encontrado" };
-    }
+    const planoAtualizado = await atualizarPlanoService(id, validated);
 
     revalidatePath("/planos");
     revalidatePath(`/planos/${id}/editar`);
     return { success: true, data: planoAtualizado };
   } catch (error) {
     if (error instanceof z.ZodError) {
-    return {
-      success: false,
-      error: error.issues.map((e) => e.message).join(", "),
-    };
+      return {
+        success: false,
+        error: error.issues.map((e) => e.message).join(", "),
+      };
     }
     return {
       success: false,
@@ -154,17 +118,8 @@ export async function atualizarPlano(id: string, formData: FormData) {
 export async function deletarPlano(id: string) {
   await requireAuth();
 
-  if (!id) {
-    return { success: false, error: "ID do plano é obrigatório" };
-  }
-
   try {
-    const planoDeletado = await deletePlano(id);
-
-    if (!planoDeletado) {
-      return { success: false, error: "Plano não encontrado" };
-    }
-
+    await deletarPlanoService(id);
     revalidatePath("/planos");
     return { success: true };
   } catch (error) {

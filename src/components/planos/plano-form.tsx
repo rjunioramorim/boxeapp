@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -22,31 +21,9 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { planos } from "@/lib/db/schema";
+import { planoSchema, type PlanoFormValues } from "@/lib/schemas/planos";
 
 type Plano = typeof planos.$inferSelect;
-
-const planoSchema = z.object({
-  nome: z.string().min(1, "Nome é obrigatório"),
-  tipo: z.enum(["INDIVIDUAL", "COLETIVO"], {
-    message: "Tipo deve ser INDIVIDUAL ou COLETIVO",
-  }),
-  valor: z
-    .string()
-    .min(1, "Valor é obrigatório")
-    .refine(
-      (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
-      "Valor deve ser um número positivo"
-    ),
-  qtdDias: z
-    .number()
-    .int("Quantidade de dias deve ser um número inteiro")
-    .min(1, "Quantidade de dias deve ser pelo menos 1")
-    .max(31, "Quantidade de dias não pode ser maior que 31")
-    .optional(),
-  ativo: z.boolean().optional(),
-});
-
-type PlanoFormValues = z.infer<typeof planoSchema>;
 
 interface PlanoFormProps {
   plano?: Plano | null;
