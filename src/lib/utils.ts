@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { format } from "date-fns"
+import { format, lastDayOfMonth, setDate, min } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
 export function cn(...inputs: ClassValue[]) {
@@ -21,4 +21,16 @@ export function formatarDataDB(date: Date | string | null | undefined, formatStr
   const adjustedDate = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
 
   return format(adjustedDate, formatStr, { locale: ptBR });
+}
+
+/**
+ * Calcula a data de vencimento em um mês específico respeitando o dia escolhido.
+ * Se o dia não existir no mês (ex: 31 em Abril), retorna o último dia do mês.
+ */
+export function calcularDataVencimento(referencia: Date, diaVencimento: number) {
+  const d = new Date(referencia);
+  const dataDesejada = setDate(d, diaVencimento);
+  const ultimoDia = lastDayOfMonth(d);
+
+  return min([dataDesejada, ultimoDia]);
 }

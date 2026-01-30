@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { formatarDataDB } from "@/lib/utils";
 import {
     CreditCard,
@@ -111,17 +112,22 @@ export function PagamentoList({ pagamentos, onConfirm }: PagamentoListProps) {
                                     </div>
 
                                     {pag.status !== "PAGO" && pag.status !== "CANCELADO" ? (
-                                        <Button
-                                            onClick={() => onConfirm(pag)}
-                                            className="min-h-[44px] touch-manipulation font-bold"
-                                        >
-                                            Confirmar
-                                        </Button>
-                                    ) : pag.dataPagamento ? (
-                                        <div className="text-right text-xs text-muted-foreground">
-                                            Pago em: {formatarDataDB(pag.dataPagamento, "dd/MM/yyyy")}
+                                        <div className="flex gap-2">
+                                            <Button asChild variant="outline" size="sm" className="min-h-[44px] touch-manipulation">
+                                                <Link href={`/pagamentos/${pag.id}`}>Detalhes</Link>
+                                            </Button>
+                                            <Button
+                                                onClick={() => onConfirm(pag)}
+                                                className="min-h-[44px] touch-manipulation font-bold"
+                                            >
+                                                Confirmar
+                                            </Button>
                                         </div>
-                                    ) : null}
+                                    ) : (
+                                        <Button asChild variant="ghost" size="sm" className="min-h-[44px] touch-manipulation text-muted-foreground">
+                                            <Link href={`/pagamentos/${pag.id}`}>Ver Detalhes</Link>
+                                        </Button>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -163,9 +169,14 @@ export function PagamentoList({ pagamentos, onConfirm }: PagamentoListProps) {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         {pag.status !== "PAGO" && pag.status !== "CANCELADO" ? (
-                                            <Button variant="outline" size="sm" onClick={() => onConfirm(pag)}>
-                                                Confirmar
-                                            </Button>
+                                            <div className="flex justify-end gap-2">
+                                                <Button variant="ghost" size="sm" asChild>
+                                                    <Link href={`/pagamentos/${pag.id}`}>Detalhes</Link>
+                                                </Button>
+                                                <Button variant="outline" size="sm" onClick={() => onConfirm(pag)}>
+                                                    Confirmar
+                                                </Button>
+                                            </div>
                                         ) : (
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -175,7 +186,9 @@ export function PagamentoList({ pagamentos, onConfirm }: PagamentoListProps) {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                    <DropdownMenuItem>Ver Detalhes</DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href={`/pagamentos/${pag.id}`}>Ver Detalhes</Link>
+                                                    </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem className="text-destructive">
                                                         Estornar Pagamento

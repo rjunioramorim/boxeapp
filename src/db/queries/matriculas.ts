@@ -8,6 +8,7 @@ import {
 } from "@/db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { addDays, format, startOfDay } from "date-fns";
+import { calcularDataVencimento } from "@/lib/utils";
 
 /**
  * Busca matrícula por ID
@@ -89,24 +90,41 @@ export async function createMatriculaCompleta(data: {
             );
         }
 
-        // 3. Criar Primeiro Pagamento
-        // Definir data de vencimento (mesma data do início ou ajustado pelo diaVencimento?)
-        // PRD diz: "primeiro pagamento"
-        // Vamos usar a regra: mesReferencia = mês da data de início
+        // 3. Criar Pagamentos (Atual e Próximo)
+        const dataVencimentoAtual = data.dataInicio;
         const [primeiroPagamento] = await tx
             .insert(pagamentos)
             .values({
                 matriculaId: novaMatricula.id,
                 valorEsperado: data.valorPlano,
-                mesReferencia: data.dataInicio,
-                dataVencimento: data.dataInicio, // Primeiro pagamento vence no ato/início
+                mesReferencia: dataVencimentoAtual, // Baseado no vencimento
+                dataVencimento: dataVencimentoAtual,
                 status: "PENDENTE",
             })
             .returning();
 
-        // 4. Gerar Agendamentos para os próximos 7 dias
+        // Gerar próximo pagamento (vencimento no diaVencimento do mês seguinte)
+        const dataReferenciaProximo = new Date(data.dataInicio);
+        dataReferenciaProximo.setMonth(dataReferenciaProximo.getMonth() + 1);
+
+        const dataVencimentoProximo = calcularDataVencimento(dataReferenciaProximo, data.diaVencimento);
+
+        await tx
+            .insert(pagamentos)
+            .values({
+                matriculaId: novaMatricula.id,
+                valorEsperado: data.valorPlano,
+                mesReferencia: dataVencimentoProximo, // Baseado no vencimento
+                dataVencimento: dataVencimentoProximo,
+                status: "PENDENTE",
+            });
+
+        // 4. Gerar Agendamentos até o próximo vencimento
         const agendamentosValues = [];
-        for (let i = 0; i < 7; i++) {
+        const diffTime = Math.abs(dataVencimentoProximo.getTime() - data.dataInicio.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        for (let i = 0; i < diffDays; i++) {
             const dataAgendamento = addDays(data.dataInicio, i);
             const diaSemana = dataAgendamento.getUTCDay() === 0 ? 7 : dataAgendamento.getUTCDay(); // UTC 0=Dom, Map 1=Seg...7=Dom
 

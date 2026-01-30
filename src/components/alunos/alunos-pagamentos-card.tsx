@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, Plus } from "lucide-react";
+import { CreditCard, Plus, Eye } from "lucide-react";
+import Link from "next/link";
 import {
     Card,
     CardContent,
@@ -46,27 +47,34 @@ export function AlunoPagamentosCard({ aluno }: AlunoPagamentosCardProps) {
                 {aluno.pagamentosRecentes && aluno.pagamentosRecentes.length > 0 ? (
                     <div className="space-y-4">
                         {aluno.pagamentosRecentes.map((pag: any) => (
-                            <div key={pag.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
+                            <Link
+                                key={pag.id}
+                                href={`/pagamentos/${pag.id}`}
+                                className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0 hover:bg-muted/50 transition-colors p-2 rounded-lg -mx-2"
+                            >
                                 <div>
-                                    <div className="font-medium">
+                                    <div className="font-medium text-sm">
                                         {formatarDataDB(pag.mesReferencia, "MMMM/yyyy")}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">
+                                    <div className="text-[10px] text-muted-foreground">
                                         Venc: {formatarDataDB(pag.dataVencimento, "dd/MM/yyyy")}
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <div className="font-bold text-sm">
-                                        {new Intl.NumberFormat("pt-BR", {
-                                            style: "currency",
-                                            currency: "BRL",
-                                        }).format(parseFloat(pag.valorEsperado))}
+                                <div className="text-right flex items-center gap-3">
+                                    <div>
+                                        <div className="font-bold text-sm">
+                                            {new Intl.NumberFormat("pt-BR", {
+                                                style: "currency",
+                                                currency: "BRL",
+                                            }).format(parseFloat(pag.valorEsperado))}
+                                        </div>
+                                        <Badge variant={pag.status === "PAGO" ? "default" : "outline"} className="text-[9px] h-4">
+                                            {pag.status}
+                                        </Badge>
                                     </div>
-                                    <Badge variant={pag.status === "PAGO" ? "default" : "outline"} className="text-[10px]">
-                                        {pag.status}
-                                    </Badge>
+                                    <Eye className="h-4 w-4 text-muted-foreground" />
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 ) : (

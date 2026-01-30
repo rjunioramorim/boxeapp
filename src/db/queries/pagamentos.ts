@@ -1,7 +1,8 @@
 import { db } from "@/db";
-import { pagamentos, matriculas, alunos } from "@/db/schema";
+import { pagamentos, matriculas, alunos, matriculasAulas, agendamentos } from "@/db/schema";
 import { eq, and, desc, asc, between, ilike, or } from "drizzle-orm";
-import { startOfMonth, endOfMonth, addMonths } from "date-fns";
+import { startOfMonth, endOfMonth, addMonths, addDays } from "date-fns";
+import { calcularDataVencimento } from "@/lib/utils";
 
 /**
  * Lista pagamentos com filtros opcionais
@@ -120,17 +121,53 @@ export async function confirmarPagamento(id: string, data: {
             if (!proximoExistente) {
                 // 4. Calcular data de vencimento do próximo mês
                 // mesReferencia é o mês cheio, dataVencimento deve usar o diaVencimento da matricula
-                const proximoVencimento = new Date(proximoMesReferencia);
-                proximoVencimento.setDate(matriculaInfo.diaVencimento);
+                const proximoVencimento = calcularDataVencimento(proximoMesReferencia, matriculaInfo.diaVencimento);
 
                 // Criar o próximo pagamento
                 await tx.insert(pagamentos).values({
                     matriculaId: pagamentoAtualizado.matriculaId,
                     valorEsperado: matriculaInfo.plano.valor,
-                    mesReferencia: proximoMesReferencia,
+                    mesReferencia: proximoVencimento, // Baseado no vencimento
                     dataVencimento: proximoVencimento,
                     status: "PENDENTE",
                 });
+            }
+
+            // 5. Gerar novos agendamentos para os próximos 30 dias
+            // Buscamos os dias/horários configurados para essa matrícula
+            const aulasMatricula = await tx.query.matriculasAulas.findMany({
+                where: and(
+                    eq(matriculasAulas.matriculaId, pagamentoAtualizado.matriculaId),
+                    eq(matriculasAulas.ativo, true)
+                )
+            });
+
+            if (aulasMatricula.length > 0) {
+                const agendamentosValues = [];
+                const dataInicioAgendamentos = addDays(new Date(pagamentoAtualizado.dataVencimento), 1);
+
+                for (let i = 0; i < 30; i++) {
+                    const dataAgendamento = addDays(dataInicioAgendamentos, i);
+                    const diaSemana = dataAgendamento.getUTCDay() === 0 ? 7 : dataAgendamento.getUTCDay();
+
+                    for (const aulaConfig of aulasMatricula) {
+                        if (aulaConfig.diasSemana?.includes(diaSemana)) {
+                            agendamentosValues.push({
+                                aulaId: aulaConfig.aulaId,
+                                alunoId: matriculaInfo.alunoId,
+                                matriculaId: matriculaInfo.id,
+                                data: dataAgendamento,
+                                horario: aulaConfig.horario || "00:00:00", // Fallback seguro
+                                status: "AGENDADO" as const,
+                                tipo: "AUTOMATICO" as const,
+                            });
+                        }
+                    }
+                }
+
+                if (agendamentosValues.length > 0) {
+                    await tx.insert(agendamentos).values(agendamentosValues).onConflictDoNothing();
+                }
             }
         }
 
