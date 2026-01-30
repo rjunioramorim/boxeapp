@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MatriculaForm } from "@/components/alunos/matricula-form";
 import { buscarAluno } from "@/actions/alunos";
-import { getAllPlanosWithAulas } from "@/db/queries/planos";
+import { listarPlanos } from "@/actions/planos";
 import { listarAulas } from "@/actions/aulas";
 import { criarMatriculaCompleta } from "@/actions/matriculas";
 import { redirect, notFound } from "next/navigation";
@@ -22,7 +22,7 @@ export default async function MatricularAlunoPage({
     const { id } = await params;
     const [aluno, planos, aulas] = await Promise.all([
         buscarAluno(id),
-        getAllPlanosWithAulas(),
+        listarPlanos(),
         listarAulas(),
     ]);
 
@@ -62,7 +62,7 @@ export default async function MatricularAlunoPage({
                 <CardContent>
                     <MatriculaForm
                         alunoId={id}
-                        planos={planos as any}
+                        planos={planos}
                         aulas={aulas}
                         onSubmit={handleSubmit}
                         cancelHref={`/alunos/${id}`}

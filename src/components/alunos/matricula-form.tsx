@@ -37,7 +37,7 @@ type Aula = typeof aulas.$inferSelect;
 
 interface MatriculaFormProps {
     alunoId: string;
-    planos: (Plano & { aulaIds: string[] })[];
+    planos: Plano[];
     aulas: Aula[];
     onSubmit: (data: any) => Promise<any>;
     cancelHref?: string;
@@ -68,20 +68,18 @@ export function MatriculaForm({
         name: "aulas",
     });
 
-    // Aulas disponíveis para o plano selecionado
+    // Aulas disponíveis (todas as aulas ativas)
     const availableAulas = useMemo(() => {
-        const plano = planos.find((p) => p.id === selectedPlanoId);
-        if (!plano) return [];
-        return aulas.filter((a) => plano.aulaIds.includes(a.id));
-    }, [selectedPlanoId, planos, aulas]);
+        return aulas.filter((a) => a.ativo);
+    }, [aulas]);
+
+    const selectedPlano = useMemo(() => {
+        return planos.find((p) => p.id === selectedPlanoId);
+    }, [selectedPlanoId, planos]);
 
     const handlePlanoChange = (id: string) => {
         setSelectedPlanoId(id);
         form.setValue("planoId", id);
-
-        // Auto-preencher aulas se for plano coletivo ou individual com aulas fixas?
-        // PRD sugere que o usuário selecione as aulas.
-        replace([]); // Reset aulas selecionadas ao mudar de plano
     };
 
     const toggleAula = (aula: Aula) => {
@@ -191,11 +189,14 @@ export function MatriculaForm({
                 {/* Seleção de Aulas */}
                 {selectedPlanoId && (
                     <div className="space-y-4">
-                        <div>
-                            <FormLabel className="text-base">Aulas do Plano</FormLabel>
-                            <p className="text-sm text-muted-foreground">
-                                Selecione as aulas que o aluno frequentará.
-                            </p>
+                        <div className="flex flex-col gap-1">
+                            <FormLabel className="text-base text-primary">Aulas Disponíveis</FormLabel>
+                            {selectedPlano && (
+                                <p className="text-sm text-muted-foreground">
+                                    Plano selecionado: <span className="font-semibold text-foreground">{selectedPlano.nome}</span>.
+                                    Permite até <span className="font-semibold text-foreground">{selectedPlano.qtdDias}x na semana</span>.
+                                </p>
+                            )}
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -229,8 +230,8 @@ export function MatriculaForm({
                             })}
                         </div>
                         {availableAulas.length === 0 && (
-                            <p className="text-sm text-destructive font-medium bg-destructive/10 p-3 rounded-md">
-                                Este plano não possui aulas vinculadas. Verifique as configurações do plano.
+                            <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-md">
+                                Nenhuma aula ativa encontrada.
                             </p>
                         )}
                         <FormMessage>{form.formState.errors.aulas?.message}</FormMessage>

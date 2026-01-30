@@ -49,7 +49,7 @@ Desenvolver um sistema web para gerenciar confirmações de pagamento e matrícu
 ### 2.4 Gestão de Matrículas
 - Matricular aluno ao criar/editar cadastro
 - Selecionar plano (Individual/Coletivo)
-- Vincular aluno às aulas do plano
+- Vincular aluno às aulas 
 - Definir dia de vencimento (1 a 31; dia 31 = último dia do mês quando o mês tiver menos de 31 dias)
 - Definir horários específicos para cada aula vinculada buscar dos dados da aula
 

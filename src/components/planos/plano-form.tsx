@@ -31,13 +31,12 @@ type Plano = typeof planos.$inferSelect;
 type Aula = typeof aulas.$inferSelect;
 
 interface PlanoFormProps {
-  plano?: (Plano & { aulaIds?: string[] }) | null;
-  aulas?: Aula[];
+  plano?: Plano | null;
   onSubmit: (data: PlanoFormValues) => Promise<{ success: boolean; error?: string }>;
   cancelHref?: string;
 }
 
-export function PlanoForm({ plano, aulas = [], onSubmit, cancelHref }: PlanoFormProps) {
+export function PlanoForm({ plano, onSubmit, cancelHref }: PlanoFormProps) {
   const form = useForm<PlanoFormValues>({
     resolver: zodResolver(planoSchema),
     defaultValues: {
@@ -46,7 +45,6 @@ export function PlanoForm({ plano, aulas = [], onSubmit, cancelHref }: PlanoForm
       valor: plano?.valor || "",
       qtdDias: plano?.qtdDias || 3,
       ativo: plano?.ativo ?? true,
-      aulaIds: (plano?.aulaIds || []) as string[],
     },
   });
 
@@ -173,76 +171,6 @@ export function PlanoForm({ plano, aulas = [], onSubmit, cancelHref }: PlanoForm
           )}
         />
 
-        <div className="space-y-4">
-          <div className="flex flex-col gap-1">
-            <FormLabel>Aulas Vinculadas</FormLabel>
-            <p className="text-sm text-muted-foreground">
-              Selecione quais aulas pertencem a este plano.
-            </p>
-          </div>
-
-          <FormField
-            control={form.control}
-            name="aulaIds"
-            render={({ field }) => (
-              <FormItem>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {aulas.map((aula) => {
-                    const isChecked = field.value?.includes(aula.id);
-                    const id = `aula-${aula.id}`;
-                    return (
-                      <div
-                        key={aula.id}
-                        className={cn(
-                          "flex items-center space-x-3 rounded-md border p-4 transition-colors hover:bg-accent/50 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
-                          isChecked && "bg-accent border-primary"
-                        )}
-                      >
-                        <FormControl>
-                          <Checkbox
-                            id={id}
-                            checked={isChecked}
-                            onCheckedChange={(checked) => {
-                              const current = field.value || [];
-                              const next = checked
-                                ? [...current, aula.id]
-                                : current.filter((id) => id !== aula.id);
-                              field.onChange(next);
-                            }}
-                          />
-                        </FormControl>
-                        <Label
-                          htmlFor={id}
-                          className="flex flex-1 flex-col gap-1 cursor-pointer select-none"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{aula.nome}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {aula.horario.slice(0, 5)}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {aula.diasSemana.map((dia) => (
-                              <Badge key={dia} variant="outline" className="text-[10px] px-1 py-0 h-4">
-                                {["", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"][dia]}
-                              </Badge>
-                            ))}
-                          </div>
-                        </Label>
-                      </div>
-                    );
-                  })}
-                </div>
-                {aulas.length === 0 && (
-                  <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-md">
-                    Nenhuma aula encontrada. <Link href="/aulas/novo" className="text-primary hover:underline">Cadastre aulas primeiro.</Link>
-                  </p>
-                )}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
 
         {form.formState.errors.root && (
           <div className="text-sm text-destructive">

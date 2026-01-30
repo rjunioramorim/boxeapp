@@ -1,13 +1,10 @@
 import {
   getAllPlanos,
   getPlanoById,
-  getPlanoWithAulas,
   createPlano,
   updatePlano,
   deletePlano,
-  type PlanoWithAulas,
 } from "@/db/queries/planos";
-import { vincularAulasAoPlanoService } from "./aulas";
 import type { planos } from "@/db/schema";
 import type { PlanoFormValues, PlanoUpdateValues } from "@/schemas/planos";
 
@@ -53,28 +50,12 @@ export async function buscarPlanoServiceOrNull(id: string): Promise<Plano | null
   return await getPlanoById(id);
 }
 
-/**
- * Busca um plano com suas aulas vinculadas
- */
-export async function buscarPlanoComAulasService(id: string): Promise<PlanoWithAulas | null> {
-  if (!id) {
-    return null;
-  }
-  return await getPlanoWithAulas(id);
-}
 
 /**
  * Cria um novo plano
  */
 export async function criarPlanoService(data: PlanoFormValues): Promise<Plano> {
-  const { aulaIds, ...planoData } = data;
-  const novoPlano = await createPlano(planoData);
-
-  if (aulaIds && aulaIds.length > 0) {
-    await vincularAulasAoPlanoService(novoPlano.id, aulaIds);
-  }
-
-  return novoPlano;
+  return await createPlano(data);
 }
 
 /**
@@ -89,15 +70,10 @@ export async function atualizarPlanoService(
     throw new Error("ID do plano é obrigatório");
   }
 
-  const { aulaIds, ...planoData } = data;
-  const planoAtualizado = await updatePlano(id, planoData);
+  const planoAtualizado = await updatePlano(id, data);
 
   if (!planoAtualizado) {
     throw new Error("Plano não encontrado");
-  }
-
-  if (aulaIds !== undefined) {
-    await vincularAulasAoPlanoService(id, aulaIds);
   }
 
   return planoAtualizado;

@@ -4,11 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlanoForm } from "@/components/planos/plano-form";
 import { criarPlano } from "@/actions/planos";
-import { listarAulas } from "@/actions/aulas";
 import { redirect } from "next/navigation";
 
 export default async function NovoPlanoPage() {
-  const aulas = await listarAulas();
 
   async function handleSubmit(data: {
     nome: string;
@@ -16,7 +14,6 @@ export default async function NovoPlanoPage() {
     valor: string;
     qtdDias?: number;
     ativo?: boolean;
-    aulaIds: string[];
   }) {
     "use server";
     const formData = new FormData();
@@ -27,7 +24,6 @@ export default async function NovoPlanoPage() {
       formData.append("qtdDias", data.qtdDias.toString());
     }
     formData.append("ativo", data.ativo ? "true" : "false");
-    formData.append("aulaIds", JSON.stringify(data.aulaIds));
 
     const result = await criarPlano(formData);
     if (result.success) {
@@ -57,7 +53,7 @@ export default async function NovoPlanoPage() {
           <CardTitle>Informações do Plano</CardTitle>
         </CardHeader>
         <CardContent>
-          <PlanoForm onSubmit={handleSubmit} aulas={aulas} />
+          <PlanoForm onSubmit={handleSubmit} />
         </CardContent>
       </Card>
     </div>
