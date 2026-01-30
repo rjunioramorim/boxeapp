@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlanosList } from "@/components/planos/planos-list";
-import { listarPlanos } from "@/lib/actions/planos";
+import { listarPlanos } from "@/actions/planos";
 import { PlanosListWrapper } from "@/components/planos/planos-list-wrapper";
 
 export default async function PlanosPage() {

@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlanoForm } from "@/components/planos/plano-form";
-import { buscarPlano, atualizarPlano } from "@/lib/actions/planos";
+import { buscarPlano, atualizarPlano } from "@/actions/planos";
 import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
 

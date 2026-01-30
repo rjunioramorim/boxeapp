@@ -378,7 +378,17 @@ Desenvolver um sistema web para gerenciar confirmações de pagamento e matrícu
 
 ---
 
-## 8. Steps de Implementação (Ordem de Execução)
+## 8. Padrão de CRUD (referência para implementação)
+
+Os CRUDs do sistema seguem um **padrão único** baseado na implementação de **Planos**. A estrutura (queries → schemas → services → actions → componentes → páginas), contratos de retorno, validação Zod, Server Actions e layout mobile-first estão descritos em:
+
+- **[.cursor/docs/CRUD-PATTERN.md](.cursor/docs/CRUD-PATTERN.md)** — Padrão de CRUD (base: Planos)
+
+Use esse documento como base para Aulas, Alunos, Pagamentos, Agendamentos e demais entidades. As fases abaixo indicam *o quê* implementar; o *como* (estrutura de arquivos, assinaturas, retornos e UI) segue o CRUD-PATTERN.
+
+---
+
+## 9. Steps de Implementação (Ordem de Execução)
 
 ### **FASE 1: Setup do Projeto (1-2 dias)**
 
@@ -406,7 +416,7 @@ npm install lucide-react
 
 #### Step 1.4: Configurar Drizzle ORM
 - Criar `drizzle.config.ts`
-- Criar `/lib/db/index.ts`
+- Criar `/db/index.ts`
 - Configurar scripts no `package.json`
 
 #### Step 1.5: Instalar shadcn/ui
@@ -422,7 +432,7 @@ npx shadcn-ui@latest add dropdown-menu dialog alert
 ### **FASE 2: Schema e Autenticação (2 dias)**
 
 #### Step 2.1: Criar Schema Drizzle
-- Criar `/lib/db/schema.ts` com todas as tabelas
+- Criar `/db/schema.ts` com todas as tabelas
 - Definir relações entre entidades
 - Exportar tipos TypeScript
 
@@ -441,7 +451,7 @@ npm run db:migrate
 - Criar `/app/api/auth/[...nextauth]/route.ts`
 - Configurar Credentials Provider
 - Criar middleware de autenticação
-- Criar `/lib/auth.ts` com funções auxiliares
+- Criar `/auth.ts` com funções auxiliares
 
 #### Step 2.5: Criar Tela de Login
 - Criar `/app/login/page.tsx`
@@ -452,31 +462,34 @@ npm run db:migrate
 
 ### **FASE 3: CRUD de Planos (1-2 dias)**
 
+*Padrão técnico: [CRUD-PATTERN.md](.cursor/docs/CRUD-PATTERN.md).*
+
 #### Step 3.1: Criar Queries Drizzle (Planos)
-- Criar `/lib/db/queries/planos.ts`
+- Criar `src/db/queries/planos.ts`
 - Funções: getAll, getById, create, update, delete
 
-#### Step 3.2: Criar Server Actions e rotas (Planos)
-- Server Actions para create, update, delete (formulários)
-- Route Handlers em `/app/api/...` apenas se necessário para consumo externo; preferir Server Actions para mutations
+#### Step 3.2: Criar Server Actions (Planos)
+- Server Actions para create, update, delete (formulários); ver CRUD-PATTERN para assinaturas e retorno.
 
 #### Step 3.3: Criar Páginas (Planos)
-- `/app/(dashboard)/planos/page.tsx` - Lista
-- `/app/(dashboard)/planos/novo/page.tsx` - Criar
-- `/app/(dashboard)/planos/[id]/editar/page.tsx` - Editar
+- `src/app/(dashboard)/planos/page.tsx` - Lista (Server Component)
+- `src/app/(dashboard)/planos/novo/page.tsx` - Criar
+- `src/app/(dashboard)/planos/[id]/editar/page.tsx` - Editar
 
 #### Step 3.4: Criar Componentes (Planos)
-- `PlanosList` - Tabela com ações
-- `PlanoForm` - Formulário reutilizável
-- `PlanoCard` - Card para dashboard
+- `PlanosList` - Cards (mobile) + tabela (desktop); touch-friendly (min-h 44px)
+- `PlanoForm` - Formulário reutilizável (react-hook-form + zod)
+- `PlanosListWrapper` - Lista + dialog de confirmação de exclusão
 
 ---
 
 ### **FASE 4: CRUD de Aulas (1-2 dias)**
 
+*Seguir [CRUD-PATTERN.md](.cursor/docs/CRUD-PATTERN.md); incluir vínculo planos-aulas conforme seção 9.*
+
 #### Step 4.1: Criar Queries Drizzle (Aulas)
-- Criar `/lib/db/queries/aulas.ts`
-- Incluir query para buscar aulas por plano
+- Criar `src/db/queries/aulas.ts`
+- Funções: getAll, getById, getByPlanoId, create, update, delete; setAulasDoPlano para vínculo N:N
 
 #### Step 4.2: Criar Server Actions (Aulas)
 - Server Actions para create, update, delete de aulas (formulários)
@@ -502,11 +515,11 @@ npm run db:migrate
 ### **FASE 5: CRUD de Alunos e Matrículas (3-4 dias)**
 
 #### Step 5.1: Criar Queries Drizzle (Alunos)
-- Criar `/lib/db/queries/alunos.ts`
+- Criar `db/queries/alunos.ts`
 - Incluir queries complexas (com matrícula, pagamentos, presença)
 
 #### Step 5.2: Criar Queries Drizzle (Matrículas)
-- Criar `/lib/db/queries/matriculas.ts`
+- Criar `db/queries/matriculas.ts`
 - Função para criar matrícula completa (transação)
 
 #### Step 5.3: Criar Server Actions (Alunos)
@@ -547,7 +560,7 @@ npm run db:migrate
 ### **FASE 6: Gestão de Pagamentos (2-3 dias)**
 
 #### Step 6.1: Criar Queries Drizzle (Pagamentos)
-- Criar `/lib/db/queries/pagamentos.ts`
+- Criar `/db/queries/pagamentos.ts`
 - Queries: pendentes, por mês, por aluno, confirmar
 
 #### Step 6.2: Criar Server Actions (Pagamentos)
@@ -575,7 +588,7 @@ npm run db:migrate
 ### **FASE 7: Gestão de Agendamentos (3-4 dias)**
 
 #### Step 7.1: Criar Queries Drizzle (Agendamentos)
-- Criar `/lib/db/queries/agendamentos.ts`
+- Criar `/db/queries/agendamentos.ts`
 - Query para agendamentos do dia (agrupados por aula)
 - Query para agendamentos da semana
 - Funções: marcarPresenca, adicionar, remover
@@ -613,7 +626,7 @@ npm run db:migrate
 ### **FASE 8: Alteração de Horários (2 dias)**
 
 #### Step 8.1: Criar Lógica de Alteração
-- Criar `/lib/services/alteracao-horarios.ts`
+- Criar `/services/alteracao-horarios.ts`
 - Função principal: `alterarHorariosMatricula()`
 - Lógica:
   1. Buscar próxima data de vencimento
@@ -644,21 +657,21 @@ npm run db:migrate
 
 #### Step 9.1: Configurar Cron Jobs
 - Criar Route Handlers em `/app/api/cron/...` protegidos por `CRON_SECRET` (invocáveis por GitHub Actions ou por node-cron no container).
-- Criar `/lib/jobs/` com lógica reutilizável chamada pelas rotas de cron.
+- Criar `/jobs/` com lógica reutilizável chamada pelas rotas de cron.
 - **Produção (VPS)**: Disparar jobs via GitHub Actions scheduled workflows (chamada HTTP às rotas) OU rodar node-cron dentro do container da aplicação.
 
 #### Step 9.2: Job de Geração de Pagamentos
-- Criar `/lib/jobs/gerar-pagamentos.ts` (lógica) e `/app/api/cron/gerar-pagamentos/route.ts` (handler)
+- Criar `/jobs/gerar-pagamentos.ts` (lógica) e `/app/api/cron/gerar-pagamentos/route.ts` (handler)
 - Lógica: buscar matrículas ativas, criar pagamento do mês seguinte (timezone America/Sao_Paulo)
 - Vercel Cron: dia 1º às 00:00 (America/Sao_Paulo)
 
 #### Step 9.3: Job de Geração de Agendamentos
-- Criar `/lib/jobs/gerar-agendamentos.ts` (lógica) e route handler para cron
+- Criar `/jobs/gerar-agendamentos.ts` (lógica) e route handler para cron
 - Lógica: para cada matrícula, verificar dias e criar agendamentos (7 dias), respeitando unicidade (aula_id, aluno_id, data, horario)
 - Vercel Cron: todo dia às 00:00 (America/Sao_Paulo)
 
 #### Step 9.4: Job de Atualização de Status
-- Criar `/lib/jobs/atualizar-status.ts`
+- Criar `/jobs/atualizar-status.ts`
 - Lógica 1: Agendamentos AGENDADOS -> AUSENTE (23:59)
 - Lógica 2: Pagamentos PENDENTES + vencidos -> ATRASADO (06:00)
 
@@ -670,14 +683,14 @@ npm run db:migrate
 
 #### Step 9.6: Configurar disparo dos jobs em produção (VPS)
 - **Opção A**: GitHub Actions — workflow(s) com `schedule` (cron expression) que fazem POST às rotas `/api/cron/...` com header `Authorization: Bearer ${{ secrets.CRON_SECRET }}`.
-- **Opção B**: node-cron dentro do container — ao subir a aplicação, iniciar agendador que chama a lógica em `/lib/jobs/` nos horários definidos (timezone America/Sao_Paulo).
+- **Opção B**: node-cron dentro do container — ao subir a aplicação, iniciar agendador que chama a lógica em `/jobs/` nos horários definidos (timezone America/Sao_Paulo).
 
 ---
 
 ### **FASE 10: Dashboard e Indicadores (1-2 dias)**
 
 #### Step 10.1: Criar Queries para Dashboard
-- Criar `/lib/db/queries/dashboard.ts`
+- Criar `/db/queries/dashboard.ts`
 - Funções:
   - `getTotalAlunosAtivos()`
   - `getPagamentosPendentesMes()`
@@ -765,7 +778,7 @@ npm run db:migrate
 
 ---
 
-## 9. Estimativa de Tempo Total
+## 10. Estimativa de Tempo Total
 
 | Fase | Tempo Estimado |
 |------|----------------|
@@ -791,7 +804,7 @@ npm run db:migrate
 
 ---
 
-## 10. Próximos Passos Pós-MVP
+## 11. Próximos Passos Pós-MVP
 
 ### 10.1 Funcionalidades Futuras
 1. **WhatsApp Integration**
@@ -825,7 +838,7 @@ npm run db:migrate
 
 ---
 
-## 11. Checklist de Entrega
+## 12. Checklist de Entrega
 
 ### Funcionalidades
 - [ ] Login e autenticação
@@ -857,7 +870,7 @@ npm run db:migrate
 
 ---
 
-## 12. Contatos e Suporte
+## 13. Contatos e Suporte
 
 - **Desenvolvedor**: [Seu nome]
 - **Email**: [Seu email]

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { deletarPlano } from "@/lib/actions/planos";
+import { deletarPlano } from "@/actions/planos";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlanosList } from "./planos-list";
-import type { planos } from "@/lib/db/schema";
+import type { planos } from "@/db/schema";
 
 type Plano = typeof planos.$inferSelect;
 

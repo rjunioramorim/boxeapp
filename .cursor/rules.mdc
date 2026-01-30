@@ -32,6 +32,7 @@ O agente **DEVE** escolher a skill correta com base no contexto do arquivo:
 | `src/components/**`            | `ui-design-system`           |
 | `src/stores/**`                | `zustand-store`              |
 | `src/actions/**`               | `server-actions`             |
+| `src/services/**`              | `server-services`            |
 | `src/db/**`                    | `drizzle-database`           |
 | `src/repositories/**`          | `drizzle-database`           |
 | `Dockerfile`, `docker-compose` | `docker-environment`         |

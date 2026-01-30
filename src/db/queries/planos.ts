@@ -1,5 +1,5 @@
-import { db } from "@/lib/db";
-import { planos, planosAulas, aulas } from "@/lib/db/schema";
+import { db } from "@/db";
+import { planos, planosAulas, aulas } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
 export type PlanoWithAulas = typeof planos.$inferSelect & {

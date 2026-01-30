@@ -10,7 +10,7 @@ import {
   atualizarPlanoService,
   deletarPlanoService,
 } from "@/lib/services/planos";
-import { planoSchema, planoUpdateSchema } from "@/lib/schemas/planos";
+import { planoSchema, planoUpdateSchema } from "@/schemas/planos";
 
 /**
  * Lista todos os planos

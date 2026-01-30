@@ -20,8 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { planos } from "@/lib/db/schema";
-import { planoSchema, type PlanoFormValues } from "@/lib/schemas/planos";
+import type { planos } from "@/db/schema";
+import { planoSchema, type PlanoFormValues } from "@/schemas/planos";
 
 type Plano = typeof planos.$inferSelect;
 

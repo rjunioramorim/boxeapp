@@ -6,9 +6,9 @@ import {
   updatePlano,
   deletePlano,
   type PlanoWithAulas,
-} from "@/lib/db/queries/planos";
-import type { planos } from "@/lib/db/schema";
-import type { PlanoFormValues, PlanoUpdateValues } from "@/lib/schemas/planos";
+} from "@/db/queries/planos";
+import type { planos } from "@/db/schema";
+import type { PlanoFormValues, PlanoUpdateValues } from "@/schemas/planos";
 
 type Plano = typeof planos.$inferSelect;
 

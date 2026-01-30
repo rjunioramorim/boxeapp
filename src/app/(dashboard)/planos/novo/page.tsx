@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlanoForm } from "@/components/planos/plano-form";
-import { criarPlano } from "@/lib/actions/planos";
+import { criarPlano } from "@/actions/planos";
 import { redirect } from "next/navigation";
 
 export default function NovoPlanoPage() {

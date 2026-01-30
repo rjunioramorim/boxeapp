@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { planos } from "@/lib/db/schema";
+import type { planos } from "@/db/schema";
 
 type Plano = typeof planos.$inferSelect;
 
