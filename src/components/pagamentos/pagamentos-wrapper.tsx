@@ -30,13 +30,13 @@ export function PagamentosWrapper({ pagamentos }: PagamentosWrapperProps) {
 
     // Filtros locais (para debouncing ou UI instantânea se necessário, mas aqui usaremos URL)
     const currentNome = searchParams.get("alunoNome") || "";
-    const currentStatus = searchParams.get("status") || "todos";
+    const currentStatus = searchParams.get("status") || "PENDENTE";
     const currentMes = searchParams.get("mes") || format(new Date(), "yyyy-MM");
 
     const updateFilters = (newFilters: Record<string, string | null>) => {
         const params = new URLSearchParams(searchParams.toString());
         Object.entries(newFilters).forEach(([key, value]) => {
-            if (value === null || value === "todos") {
+            if (value === null) {
                 params.delete(key);
             } else {
                 params.set(key, value);

@@ -3,6 +3,7 @@ import {
     getPagamentoById,
     confirmarPagamento,
     cancelarPagamento,
+    criarPagamentoManual,
 } from "@/db/queries/pagamentos";
 
 /**
@@ -38,4 +39,20 @@ export async function buscarPagamentoService(id: string) {
     const pagamento = await getPagamentoById(id);
     if (!pagamento) throw new Error("Pagamento não encontrado");
     return pagamento;
+}
+
+/**
+ * Service para criar pagamento manual
+ */
+export async function criarPagamentoManualService(data: {
+    matriculaId: string;
+    valorEsperado: string;
+    mesReferencia: Date;
+    dataVencimento: Date;
+    status: "PENDENTE" | "PAGO";
+    valorPago?: string;
+    dataPagamento?: Date;
+    observacoes?: string;
+}) {
+    return await criarPagamentoManual(data);
 }

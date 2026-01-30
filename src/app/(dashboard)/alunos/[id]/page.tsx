@@ -13,6 +13,7 @@ import { buscarAluno } from "@/actions/alunos";
 import { notFound } from "next/navigation";
 import { formatarDataDB } from "@/lib/utils";
 import { MatriculaCard } from "@/components/alunos/matricula-card";
+import { AlunoPagamentosCard } from "@/components/alunos/alunos-pagamentos-card";
 import { listarAulas } from "@/actions/aulas";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -84,46 +85,7 @@ export default async function AlunoPerfilPage({
                 <MatriculaCard alunoId={id} matricula={matriculaAtiva} todasAulas={todasAulas} />
 
                 {/* Card de Pagamentos Recentes */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <CreditCard className="h-5 w-5" />
-                            Pagamentos Recentes
-                        </CardTitle>
-                        <CardDescription>Últimos 5 lançamentos de mensalidade.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {aluno.pagamentosRecentes && aluno.pagamentosRecentes.length > 0 ? (
-                            <div className="space-y-4">
-                                {aluno.pagamentosRecentes.map((pag: any) => (
-                                    <div key={pag.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
-                                        <div>
-                                            <div className="font-medium">
-                                                {formatarDataDB(pag.mesReferencia, "MMMM/yyyy")}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                Venc: {formatarDataDB(pag.dataVencimento, "dd/MM/yyyy")}
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="font-bold text-sm">
-                                                {new Intl.NumberFormat("pt-BR", {
-                                                    style: "currency",
-                                                    currency: "BRL",
-                                                }).format(parseFloat(pag.valorEsperado))}
-                                            </div>
-                                            <Badge variant={pag.status === "PAGO" ? "default" : "outline"} className="text-[10px]">
-                                                {pag.status}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-center py-8 text-muted-foreground text-sm">Nenhum pagamento registrado.</p>
-                        )}
-                    </CardContent>
-                </Card>
+                <AlunoPagamentosCard aluno={aluno} />
 
                 {/* Card de Presença Recente */}
                 <Card className="md:col-span-2">

@@ -27,6 +27,7 @@ export default async function PagamentosPage({
     }>;
 }) {
     const params = await searchParams;
+    const status = params.status || "PENDENTE";
 
     // Se não passar mês, assume o atual
     const mesParaListar = params.mes || format(new Date(), "yyyy-MM");
@@ -34,6 +35,7 @@ export default async function PagamentosPage({
     const pagamentos = await listarPagamentos({
         ...params,
         mes: mesParaListar,
+        status: status === "todos" ? undefined : status as any,
     });
 
     return (
