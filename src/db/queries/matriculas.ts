@@ -7,7 +7,7 @@ import {
     alunos,
 } from "@/db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { addDays, format, startOfDay } from "date-fns";
+import { addDays, addMonths, differenceInDays, format, startOfDay } from "date-fns";
 import { calcularDataVencimento } from "@/lib/utils";
 
 /**
@@ -90,36 +90,30 @@ export async function createMatriculaCompleta(data: {
             );
         }
 
-        // 3. Criar Pagamentos (Atual e Próximo)
-        const dataVencimentoAtual = data.dataInicio;
+        // 3. Criar Primeiro Pagamento Alinhado
+        // Calculamos o primeiro vencimento que ocorre hoje ou no futuro baseado no diaVencimento
+        let firstDueDate = calcularDataVencimento(data.dataInicio, data.diaVencimento);
+        if (firstDueDate < startOfDay(data.dataInicio)) {
+            firstDueDate = addMonths(firstDueDate, 1);
+            firstDueDate = calcularDataVencimento(firstDueDate, data.diaVencimento);
+        }
+
         const [primeiroPagamento] = await tx
             .insert(pagamentos)
             .values({
                 matriculaId: novaMatricula.id,
                 valorEsperado: data.valorPlano,
-                mesReferencia: dataVencimentoAtual, // Baseado no vencimento
-                dataVencimento: dataVencimentoAtual,
+                mesReferencia: firstDueDate,
+                dataVencimento: firstDueDate,
                 status: "PENDENTE",
             })
             .returning();
 
-        // Gerar próximo pagamento (vencimento no diaVencimento do mês seguinte)
-        const dataReferenciaProximo = new Date(data.dataInicio);
-        dataReferenciaProximo.setMonth(dataReferenciaProximo.getMonth() + 1);
+        // 4. Gerar Agendamentos
+        // Agendamos do início até o final do primeiro ciclo de pagamento (vencimento + 1 mês)
+        const endOfFirstCycle = addMonths(firstDueDate, 1);
+        const dataVencimentoProximo = calcularDataVencimento(endOfFirstCycle, data.diaVencimento);
 
-        const dataVencimentoProximo = calcularDataVencimento(dataReferenciaProximo, data.diaVencimento);
-
-        await tx
-            .insert(pagamentos)
-            .values({
-                matriculaId: novaMatricula.id,
-                valorEsperado: data.valorPlano,
-                mesReferencia: dataVencimentoProximo, // Baseado no vencimento
-                dataVencimento: dataVencimentoProximo,
-                status: "PENDENTE",
-            });
-
-        // 4. Gerar Agendamentos até o próximo vencimento
         const agendamentosValues = [];
         const diffTime = Math.abs(dataVencimentoProximo.getTime() - data.dataInicio.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
