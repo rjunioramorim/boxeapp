@@ -6,7 +6,7 @@ import {
     agendamentos,
     alunos,
 } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { addDays, format, startOfDay } from "date-fns";
 
 /**
@@ -149,18 +149,28 @@ export async function updateMatriculaStatus(id: string, status: "ATIVA" | "CANCE
 }
 
 /**
- * Atualiza horários da matrícula
+ * Atualiza horários da matrícula e reagenda aulas futuras
  */
-export async function updateMatriculaAulas(matriculaId: string, aulasData: {
-    aulaId: string;
-    diasSemana: number[];
-    horario: string;
-}[]) {
+export async function updateMatriculaAulas(
+    matriculaId: string,
+    aulasData: {
+        aulaId: string;
+        diasSemana: number[];
+        horario: string;
+    }[],
+    dataVencimentoProximo: Date
+) {
     return await db.transaction(async (tx) => {
-        // Desativar aulas antigas
+        // 1. Buscar dados da matrícula para alunoId
+        const matricula = await tx.query.matriculas.findFirst({
+            where: eq(matriculas.id, matriculaId)
+        });
+        if (!matricula) throw new Error("Matrícula não encontrada");
+
+        // 2. Desativar/Remover aulas antigas na matrícula
         await tx.delete(matriculasAulas).where(eq(matriculasAulas.matriculaId, matriculaId));
 
-        // Inserir novas
+        // 3. Inserir novas configurações de aulas
         if (aulasData.length > 0) {
             await tx.insert(matriculasAulas).values(
                 aulasData.map(a => ({
@@ -172,5 +182,48 @@ export async function updateMatriculaAulas(matriculaId: string, aulasData: {
                 }))
             );
         }
+
+        // 4. Deletar agendamentos futuros (apenas os que ainda estão como AGENDADO)
+        // De hoje até o próximo vencimento
+        const hoje = startOfDay(new Date());
+        await tx.delete(agendamentos).where(
+            and(
+                eq(agendamentos.matriculaId, matriculaId),
+                eq(agendamentos.status, "AGENDADO"),
+                sql`${agendamentos.data} >= ${hoje}`
+            )
+        );
+
+        // 5. Recriar agendamentos até a data de vencimento (máximo 31 dias por segurança)
+        const agendamentosValues = [];
+        let dataLoop = hoje;
+
+        // Loop até o vencimento ou por no máximo 31 dias
+        for (let i = 0; i < 32; i++) {
+            const dataAgendamento = addDays(hoje, i);
+            if (dataAgendamento > dataVencimentoProximo) break;
+
+            const diaSemana = dataAgendamento.getDay() === 0 ? 7 : dataAgendamento.getDay();
+
+            for (const aula of aulasData) {
+                if (aula.diasSemana.includes(diaSemana)) {
+                    agendamentosValues.push({
+                        aulaId: aula.aulaId,
+                        alunoId: matricula.alunoId,
+                        matriculaId: matricula.id,
+                        data: dataAgendamento,
+                        horario: aula.horario,
+                        status: "AGENDADO" as const,
+                        tipo: "AUTOMATICO" as const,
+                    });
+                }
+            }
+        }
+
+        if (agendamentosValues.length > 0) {
+            await tx.insert(agendamentos).values(agendamentosValues);
+        }
+
+        return agendamentosValues.length;
     });
 }

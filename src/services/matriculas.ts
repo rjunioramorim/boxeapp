@@ -65,5 +65,20 @@ export async function atualizarHorariosMatriculaService(
     aulas: { aulaId: string; diasSemana: number[]; horario: string; }[]
 ) {
     if (!matriculaId) throw new Error("ID da matrícula é obrigatório");
-    return await updateMatriculaAulas(matriculaId, aulas);
+
+    // Buscar a matrícula para saber o dia do vencimento
+    const matricula = await getMatriculaById(matriculaId);
+    if (!matricula) throw new Error("Matrícula não encontrada");
+
+    // Calcular data do próximo vencimento
+    const hoje = new Date();
+    const diaVencimento = matricula.diaVencimento;
+    let proximoVencimento = new Date(hoje.getFullYear(), hoje.getMonth(), diaVencimento);
+
+    // Se o dia de vencimento deste mês já passou, o próximo é no mês que vem
+    if (hoje.getDate() > diaVencimento) {
+        proximoVencimento.setMonth(proximoVencimento.getMonth() + 1);
+    }
+
+    return await updateMatriculaAulas(matriculaId, aulas, proximoVencimento);
 }

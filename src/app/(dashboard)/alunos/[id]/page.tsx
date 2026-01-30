@@ -13,6 +13,7 @@ import { buscarAluno } from "@/actions/alunos";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { MatriculaCard } from "@/components/alunos/matricula-card";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -77,71 +78,7 @@ export default async function AlunoPerfilPage({
 
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Card de Matrícula */}
-                <Card className="flex flex-col">
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2">
-                                <GraduationCap className="h-5 w-5" />
-                                Matrícula
-                            </CardTitle>
-                            {matriculaAtiva && (
-                                <Badge variant={statusMatriculaMap[matriculaAtiva.status]?.variant || "outline"}>
-                                    {statusMatriculaMap[matriculaAtiva.status]?.label || matriculaAtiva.status}
-                                </Badge>
-                            )}
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-1">
-                        {matriculaAtiva ? (
-                            <div className="space-y-4">
-                                <div>
-                                    <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Plano</div>
-                                    <div className="text-lg font-semibold">{matriculaAtiva.plano.nome}</div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <div className="text-sm font-medium text-muted-foreground">Início</div>
-                                        <div>{format(new Date(matriculaAtiva.dataInicio), "dd/MM/yyyy")}</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-medium text-muted-foreground">Vencimento</div>
-                                        <div>Dia {matriculaAtiva.diaVencimento}</div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-sm font-medium text-muted-foreground mb-2">Aulas e Horários</div>
-                                    <div className="space-y-2">
-                                        {matriculaAtiva.matriculasAulas.map((ma: any) => (
-                                            <div key={ma.id} className="flex items-center justify-between p-2 rounded-md bg-accent/50">
-                                                <span className="font-medium">{ma.aula.nome}</span>
-                                                <div className="text-right">
-                                                    <div className="text-xs font-bold">{ma.horario.slice(0, 5)}</div>
-                                                    <div className="flex gap-1 justify-end">
-                                                        {ma.diasSemana.map((dia: number) => (
-                                                            <span key={dia} className="text-[10px] uppercase font-bold text-muted-foreground">
-                                                                {["", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"][dia]}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-full py-8 text-center bg-muted/30 rounded-lg border border-dashed">
-                                <p className="text-muted-foreground mb-4">Este aluno não possui matrícula ativa.</p>
-                                <Button asChild className="min-h-[44px]">
-                                    <Link href={`/alunos/${id}/matricular`}>
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Nova Matrícula
-                                    </Link>
-                                </Button>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                <MatriculaCard alunoId={id} matricula={matriculaAtiva} />
 
                 {/* Card de Pagamentos Recentes */}
                 <Card>

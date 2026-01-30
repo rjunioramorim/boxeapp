@@ -180,7 +180,7 @@ flowchart LR
 
 ---
 
-## FASE 7: Gestão de Agendamentos (3-4 dias)
+## FASE 7: Gestão de Agendamentos (3-4 dias) ✅ *Concluído*
 
 1. **Queries** em `src/db/queries/agendamentos.ts`: getByDia (agrupados por aula/horário), getBySemana; marcarPresenca (status PRESENTE/AUSENTE); adicionar aluno (tipo MANUAL); remover (status CANCELADO). Respeitar unicidade (aula_id, aluno_id, data, horario).
 2. **Server Actions**: listar agendamentos do dia/semana; marcar presença; adicionar aluno a aula; remover aluno de aula.
@@ -197,7 +197,7 @@ flowchart LR
 
 ---
 
-## FASE 8: Alteração de Horários (2 dias)
+## FASE 8: Alteração de Horários (2 dias) ✅ *Concluído*
 
 1. **Serviço** `src/services/alteracao-horarios.ts`: `alterarHorariosMatricula(matriculaId, novosHorarios)`: calcular próximo vencimento (dia_vencimento da matrícula); deletar agendamentos com status AGENDADO entre hoje e vencimento; atualizar `matriculas_aulas`; recriar agendamentos com novos horários/dias até o vencimento. Validar conflitos (mesmo aluno, mesmo dia/horário).
 2. **Server Action** que chama esse serviço e retorna quantidade de agendamentos atualizados.

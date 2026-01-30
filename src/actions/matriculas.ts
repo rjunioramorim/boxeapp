@@ -7,6 +7,7 @@ import {
     cancelarMatriculaService,
     suspenderMatriculaService,
     ativarMatriculaService,
+    atualizarHorariosMatriculaService,
 } from "@/services/matriculas";
 import { matriculaCompletaSchema } from "@/schemas/matriculas";
 import { requireAuth } from "@/lib/auth";
@@ -95,5 +96,27 @@ export async function ativarMatricula(id: string, alunoId: string) {
         return { success: true };
     } catch (error) {
         return { success: false, error: error instanceof Error ? error.message : "Erro ao ativar" };
+    }
+}
+
+/**
+ * Atualiza os horários de uma matrícula
+ */
+export async function atualizarHorarios(
+    matriculaId: string,
+    alunoId: string,
+    aulas: { aulaId: string; diasSemana: number[]; horario: string; }[]
+) {
+    await requireAuth();
+    try {
+        const count = await atualizarHorariosMatriculaService(matriculaId, aulas);
+        revalidatePath(`/alunos/${alunoId}`);
+        revalidatePath("/agendamentos");
+        return { success: true, count };
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Erro ao atualizar horários"
+        };
     }
 }
