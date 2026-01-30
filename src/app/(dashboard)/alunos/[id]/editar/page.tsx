@@ -60,7 +60,11 @@ export default async function EditarAlunoPage({
                     <CardTitle>Informações Pessoais</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <AlunoForm aluno={aluno as any} onSubmit={handleSubmit} />
+                    <AlunoForm
+                        aluno={aluno}
+                        onSubmit={handleSubmit}
+                        cancelHref={`/alunos/${id}`}
+                    />
                 </CardContent>
             </Card>
         </div>

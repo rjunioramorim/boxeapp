@@ -49,7 +49,7 @@ export default function NovoAlunoPage() {
                     <CardTitle>Informações Pessoais</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <AlunoForm onSubmit={handleSubmit} />
+                    <AlunoForm onSubmit={handleSubmit} cancelHref="/alunos" />
                 </CardContent>
             </Card>
         </div>

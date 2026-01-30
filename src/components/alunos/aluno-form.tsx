@@ -27,21 +27,23 @@ type Aluno = typeof alunos.$inferSelect;
 interface AlunoFormProps {
     aluno?: Aluno | null;
     onSubmit: (data: AlunoFormValues) => Promise<any>;
-    onCancel?: () => void;
+    cancelHref?: string;
 }
 
-export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
-    const form = useForm<AlunoFormValues>({
+import Link from "next/link";
+
+export function AlunoForm({ aluno, onSubmit, cancelHref }: AlunoFormProps) {
+    const form = useForm({
         resolver: zodResolver(alunoSchema),
         defaultValues: {
             nome: aluno?.nome || "",
             telefone: aluno?.telefone || "",
             email: aluno?.email || "",
-            status: (aluno?.status as any) || "ATIVO",
+            status: (aluno?.status as "ATIVO" | "INATIVO" | "SUSPENSO") || "ATIVO",
         },
     });
 
-    const handleSubmit = async (data: AlunoFormValues) => {
+    const handleSubmit = async (data: any) => {
         const result = await onSubmit(data);
         if (result?.success === false && result.issues) {
             result.issues.forEach((issue: any) => {
@@ -131,14 +133,13 @@ export function AlunoForm({ aluno, onSubmit, onCancel }: AlunoFormProps) {
                 />
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                    {onCancel && (
+                    {cancelHref && (
                         <Button
-                            type="button"
+                            asChild
                             variant="outline"
-                            onClick={onCancel}
                             className="min-h-[44px] touch-manipulation"
                         >
-                            Cancelar
+                            <Link href={cancelHref}>Cancelar</Link>
                         </Button>
                     )}
                     <Button

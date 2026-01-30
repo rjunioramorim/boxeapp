@@ -38,8 +38,7 @@ export function DiasSemanaSelector({
                 {DIAS_SEMANA.map((dia) => (
                     <div
                         key={dia.id}
-                        className="flex items-center space-x-2 rounded-md border p-3 hover:bg-accent cursor-pointer"
-                        onClick={() => toggleDia(dia.id)}
+                        className="flex items-center space-x-2 rounded-md border p-3 hover:bg-accent focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors"
                     >
                         <Checkbox
                             id={`dia-${dia.id}`}
@@ -49,7 +48,7 @@ export function DiasSemanaSelector({
                         />
                         <Label
                             htmlFor={`dia-${dia.id}`}
-                            className="text-sm font-medium leading-none cursor-pointer flex-1 py-1"
+                            className="text-sm font-medium leading-none flex-1 py-1 cursor-pointer select-none"
                         >
                             {dia.label}
                         </Label>

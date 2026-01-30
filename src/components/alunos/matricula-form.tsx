@@ -24,10 +24,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { matriculaCompletaSchema, type MatriculaCompletaValues } from "@/schemas/matriculas";
 import type { planos, aulas } from "@/db/schema";
 import { DiasSemanaSelector } from "@/components/aulas/dias-semana-selector";
 import { HorarioInput } from "@/components/aulas/horario-input";
+import Link from "next/link";
 
 type Plano = typeof planos.$inferSelect;
 type Aula = typeof aulas.$inferSelect;
@@ -37,7 +40,7 @@ interface MatriculaFormProps {
     planos: (Plano & { aulaIds: string[] })[];
     aulas: Aula[];
     onSubmit: (data: any) => Promise<any>;
-    onCancel?: () => void;
+    cancelHref?: string;
 }
 
 export function MatriculaForm({
@@ -45,7 +48,7 @@ export function MatriculaForm({
     planos,
     aulas,
     onSubmit,
-    onCancel,
+    cancelHref,
 }: MatriculaFormProps) {
     const [selectedPlanoId, setSelectedPlanoId] = useState<string>("");
 
@@ -199,21 +202,24 @@ export function MatriculaForm({
                             {availableAulas.map((aula) => {
                                 const isSelected = fields.some((f) => f.aulaId === aula.id);
                                 return (
-                                    <Card
+                                    <Label
                                         key={aula.id}
-                                        className={`cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : ''}`}
-                                        onClick={() => toggleAula(aula)}
+                                        className={cn(
+                                            "flex items-center justify-between p-4 rounded-md border cursor-pointer transition-colors hover:bg-accent/50",
+                                            isSelected && "bg-accent border-primary"
+                                        )}
                                     >
-                                        <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
-                                            <div>
-                                                <CardTitle className="text-sm font-bold">{aula.nome}</CardTitle>
-                                                <div className="text-xs text-muted-foreground">
-                                                    {aula.horario.slice(0, 5)} - {aula.duracaoMinutos} min
-                                                </div>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-sm font-bold">{aula.nome}</span>
+                                            <div className="text-xs text-muted-foreground font-normal">
+                                                {aula.horario.slice(0, 5)} - {aula.duracaoMinutos} min
                                             </div>
-                                            <Checkbox checked={isSelected} onCheckedChange={() => { }} />
-                                        </CardHeader>
-                                    </Card>
+                                        </div>
+                                        <Checkbox
+                                            checked={isSelected}
+                                            onCheckedChange={() => toggleAula(aula)}
+                                        />
+                                    </Label>
                                 );
                             })}
                         </div>
@@ -282,14 +288,13 @@ export function MatriculaForm({
                 )}
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:justify-end border-t pt-6">
-                    {onCancel && (
+                    {cancelHref && (
                         <Button
-                            type="button"
+                            asChild
                             variant="outline"
-                            onClick={onCancel}
                             className="min-h-[44px] touch-manipulation"
                         >
-                            Cancelar
+                            <Link href={cancelHref}>Cancelar</Link>
                         </Button>
                     )}
                     <Button

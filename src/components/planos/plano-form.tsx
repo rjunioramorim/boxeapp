@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import {
   Form,
   FormControl,
@@ -32,10 +34,10 @@ interface PlanoFormProps {
   plano?: (Plano & { aulaIds?: string[] }) | null;
   aulas?: Aula[];
   onSubmit: (data: PlanoFormValues) => Promise<{ success: boolean; error?: string }>;
-  onCancel?: () => void;
+  cancelHref?: string;
 }
 
-export function PlanoForm({ plano, aulas = [], onSubmit, onCancel }: PlanoFormProps) {
+export function PlanoForm({ plano, aulas = [], onSubmit, cancelHref }: PlanoFormProps) {
   const form = useForm<PlanoFormValues>({
     resolver: zodResolver(planoSchema),
     defaultValues: {
@@ -185,44 +187,51 @@ export function PlanoForm({ plano, aulas = [], onSubmit, onCancel }: PlanoFormPr
             render={({ field }) => (
               <FormItem>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {aulas.map((aula) => (
-                    <div
-                      key={aula.id}
-                      className="flex items-center space-x-3 rounded-md border p-4 hover:bg-accent cursor-pointer"
-                      onClick={() => {
-                        const current = field.value || [];
-                        const next = current.includes(aula.id)
-                          ? current.filter((id) => id !== aula.id)
-                          : [...current, aula.id];
-                        field.onChange(next);
-                      }}
-                    >
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value?.includes(aula.id)}
-                          onCheckedChange={() => {
-                            // Handled by the div click for better touch target
-                          }}
-                          className="min-h-[24px] min-w-[24px] touch-manipulation"
-                        />
-                      </FormControl>
-                      <div className="flex flex-1 flex-col gap-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">{aula.nome}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {aula.horario.slice(0, 5)}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {aula.diasSemana.map((dia) => (
-                            <Badge key={dia} variant="outline" className="text-[10px] px-1 py-0 h-4">
-                              {["", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"][dia]}
-                            </Badge>
-                          ))}
-                        </div>
+                  {aulas.map((aula) => {
+                    const isChecked = field.value?.includes(aula.id);
+                    const id = `aula-${aula.id}`;
+                    return (
+                      <div
+                        key={aula.id}
+                        className={cn(
+                          "flex items-center space-x-3 rounded-md border p-4 transition-colors hover:bg-accent/50 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+                          isChecked && "bg-accent border-primary"
+                        )}
+                      >
+                        <FormControl>
+                          <Checkbox
+                            id={id}
+                            checked={isChecked}
+                            onCheckedChange={(checked) => {
+                              const current = field.value || [];
+                              const next = checked
+                                ? [...current, aula.id]
+                                : current.filter((id) => id !== aula.id);
+                              field.onChange(next);
+                            }}
+                          />
+                        </FormControl>
+                        <Label
+                          htmlFor={id}
+                          className="flex flex-1 flex-col gap-1 cursor-pointer select-none"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{aula.nome}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {aula.horario.slice(0, 5)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {aula.diasSemana.map((dia) => (
+                              <Badge key={dia} variant="outline" className="text-[10px] px-1 py-0 h-4">
+                                {["", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"][dia]}
+                              </Badge>
+                            ))}
+                          </div>
+                        </Label>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 {aulas.length === 0 && (
                   <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-md">
@@ -241,15 +250,14 @@ export function PlanoForm({ plano, aulas = [], onSubmit, onCancel }: PlanoFormPr
           </div>
         )}
 
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          {onCancel && (
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end border-t pt-6">
+          {cancelHref && (
             <Button
-              type="button"
+              asChild
               variant="outline"
-              onClick={onCancel}
               className="min-h-[44px] touch-manipulation"
             >
-              Cancelar
+              <Link href={cancelHref}>Cancelar</Link>
             </Button>
           )}
           <Button

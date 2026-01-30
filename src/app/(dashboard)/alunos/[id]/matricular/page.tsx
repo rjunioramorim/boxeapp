@@ -65,7 +65,7 @@ export default async function MatricularAlunoPage({
                         planos={planos as any}
                         aulas={aulas}
                         onSubmit={handleSubmit}
-                        onCancel={() => redirect(`/alunos/${id}`)}
+                        cancelHref={`/alunos/${id}`}
                     />
                 </CardContent>
             </Card>

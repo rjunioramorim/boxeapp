@@ -23,10 +23,12 @@ type Aula = typeof aulas.$inferSelect;
 interface AulaFormProps {
     aula?: Aula | null;
     onSubmit: (data: AulaFormValues) => Promise<{ success: boolean; error?: string }>;
-    onCancel?: () => void;
+    cancelHref?: string;
 }
 
-export function AulaForm({ aula, onSubmit, onCancel }: AulaFormProps) {
+import Link from "next/link";
+
+export function AulaForm({ aula, onSubmit, cancelHref }: AulaFormProps) {
     const form = useForm<AulaFormValues>({
         resolver: zodResolver(aulaSchema),
         defaultValues: {
@@ -173,14 +175,13 @@ export function AulaForm({ aula, onSubmit, onCancel }: AulaFormProps) {
                 )}
 
                 <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end pb-10">
-                    {onCancel && (
+                    {cancelHref && (
                         <Button
-                            type="button"
+                            asChild
                             variant="outline"
-                            onClick={onCancel}
                             className="min-h-[44px] touch-manipulation"
                         >
-                            Cancelar
+                            <Link href={cancelHref}>Cancelar</Link>
                         </Button>
                     )}
                     <Button
