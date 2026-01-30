@@ -9,3 +9,4 @@ export * from "./planos";
 export * from "./aulas";
 export * from "./alunos";
 export * from "./matriculas";
+export * from "./pagamentos";

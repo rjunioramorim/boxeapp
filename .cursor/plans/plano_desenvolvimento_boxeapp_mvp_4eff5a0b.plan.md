@@ -164,7 +164,7 @@ flowchart LR
 
 ---
 
-## FASE 6: Gestão de Pagamentos (2-3 dias)
+## FASE 6: Gestão de Pagamentos (2-3 dias) ✅ *Concluído*
 
 1. **Queries** em `src/db/queries/pagamentos.ts`: listar com filtros (mês, status, aluno), getById, confirmar (atualizar valor_pago, data_pagamento, status = PAGO).
 2. **Server Actions**: listar pagamentos (filtros), confirmar pagamento.

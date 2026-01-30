@@ -22,7 +22,7 @@ export default function NovoAlunoPage() {
         formData.append("status", data.status);
 
         const result = await criarAluno(formData);
-        if (result.success) {
+        if (result.success && result.data) {
             redirect(`/alunos/${result.data.id}`);
         }
         return result;
