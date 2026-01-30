@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { z } from "zod";
+import { cn } from "@/lib/utils";
 import { DiasSemanaSelector } from "@/components/aulas/dias-semana-selector";
 import { HorarioInput } from "@/components/aulas/horario-input";
 import { atualizarHorarios } from "@/actions/matriculas";
@@ -66,6 +67,15 @@ export function EditarHorariosDialog({
         name: "aulas",
     });
 
+    // Calcular limite global de dias
+    const watchedAulas = form.watch("aulas") || [];
+    const totalSelectedDays = useMemo(() => {
+        return watchedAulas.reduce((acc, a) => acc + (a.diasSemana?.length || 0), 0);
+    }, [watchedAulas]);
+
+    const limit = Number(matricula.plano.qtdDias || 0);
+    const isLimitReached = totalSelectedDays >= limit;
+
     const onSubmit = async (data: FormValues) => {
         setIsSubmitting(true);
         setError(null);
@@ -94,8 +104,19 @@ export function EditarHorariosDialog({
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Alterar Horários</DialogTitle>
-                    <DialogDescription>
-                        Ajuste os dias e horários das aulas deste aluno. Os agendamentos futuros não realizados serão atualizados.
+                    <DialogDescription className="space-y-2">
+                        <p>Ajuste os dias e horários das aulas deste aluno.</p>
+                        <div className="flex items-center gap-2 mt-2">
+                            <span className="text-sm font-semibold">
+                                Plano: {matricula.plano.nome} ({limit}x na semana)
+                            </span>
+                            <span className={cn(
+                                "px-2 py-0.5 rounded-full text-xs font-bold",
+                                isLimitReached ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            )}>
+                                {totalSelectedDays} / {limit} dias selecionados
+                            </span>
+                        </div>
                     </DialogDescription>
                 </DialogHeader>
 
@@ -112,35 +133,53 @@ export function EditarHorariosDialog({
                                     <FormField
                                         control={form.control}
                                         name={`aulas.${index}.diasSemana`}
-                                        render={({ field: dField }) => (
-                                            <FormItem>
-                                                <FormLabel>Dias da Semana</FormLabel>
-                                                <FormControl>
-                                                    <DiasSemanaSelector
-                                                        value={dField.value}
-                                                        onChange={dField.onChange}
-                                                        error={form.formState.errors.aulas?.[index]?.diasSemana?.message}
-                                                    />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
+                                        render={({ field: dField }) => {
+                                            const matriculaAula = matricula.matriculasAulas.find((ma: any) => ma.aula.id === field.aulaId);
+                                            return (
+                                                <FormItem>
+                                                    <FormLabel>Dias da Semana</FormLabel>
+                                                    <FormControl>
+                                                        <DiasSemanaSelector
+                                                            value={dField.value}
+                                                            availableDays={matriculaAula?.aula.diasSemana}
+                                                            isLimitReached={isLimitReached}
+                                                            onChange={(newValue) => {
+                                                                const currentAulas = form.getValues("aulas") || [];
+                                                                const otherAulasDays = currentAulas
+                                                                    .filter((_, i) => i !== index)
+                                                                    .reduce((acc, a) => acc + (a.diasSemana?.length || 0), 0);
+                                                                const totalWithNew = otherAulasDays + newValue.length;
+
+                                                                if (newValue.length > dField.value.length && totalWithNew > limit) {
+                                                                    return;
+                                                                }
+                                                                dField.onChange(newValue);
+                                                            }}
+                                                            error={form.formState.errors.aulas?.[index]?.diasSemana?.message}
+                                                        />
+                                                    </FormControl>
+                                                </FormItem>
+                                            );
+                                        }}
                                     />
-                                    <FormField
-                                        control={form.control}
-                                        name={`aulas.${index}.horario`}
-                                        render={({ field: hField }) => (
-                                            <FormItem>
-                                                <FormLabel>Horário</FormLabel>
-                                                <FormControl>
-                                                    <HorarioInput
-                                                        value={hField.value}
-                                                        onChange={hField.onChange}
-                                                        error={form.formState.errors.aulas?.[index]?.horario?.message}
-                                                    />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
+                                    {matricula.plano.tipo === "INDIVIDUAL" && (
+                                        <FormField
+                                            control={form.control}
+                                            name={`aulas.${index}.horario`}
+                                            render={({ field: hField }) => (
+                                                <FormItem>
+                                                    <FormLabel>Horário</FormLabel>
+                                                    <FormControl>
+                                                        <HorarioInput
+                                                            value={hField.value}
+                                                            onChange={hField.onChange}
+                                                            error={form.formState.errors.aulas?.[index]?.horario?.message}
+                                                        />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
                                 </CardContent>
                             </Card>
                         ))}

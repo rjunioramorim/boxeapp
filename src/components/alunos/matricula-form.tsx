@@ -80,7 +80,16 @@ export function MatriculaForm({
     const handlePlanoChange = (id: string) => {
         setSelectedPlanoId(id);
         form.setValue("planoId", id);
+        replace([]); // Resetar seleções ao trocar de plano para evitar carregar dias de plano anterior
     };
+
+    const watchedAulas = form.watch("aulas") || [];
+    const totalSelectedDays = useMemo(() => {
+        return watchedAulas.reduce((acc, a) => acc + (a.diasSemana?.length || 0), 0);
+    }, [watchedAulas]);
+
+    const limit = selectedPlano?.qtdDias || 0;
+    const isLimitReached = totalSelectedDays >= limit;
 
     const toggleAula = (aula: Aula) => {
         const index = fields.findIndex((f) => f.aulaId === aula.id);
@@ -89,8 +98,8 @@ export function MatriculaForm({
         } else {
             append({
                 aulaId: aula.id,
-                diasSemana: aula.diasSemana,
-                horario: aula.horario.slice(0, 5),
+                diasSemana: [], // Começa desmarcado
+                horario: aula.horario.slice(0, 5), // Horário padrão da aula
             });
         }
     };
@@ -192,10 +201,18 @@ export function MatriculaForm({
                         <div className="flex flex-col gap-1">
                             <FormLabel className="text-base text-primary">Aulas Disponíveis</FormLabel>
                             {selectedPlano && (
-                                <p className="text-sm text-muted-foreground">
-                                    Plano selecionado: <span className="font-semibold text-foreground">{selectedPlano.nome}</span>.
-                                    Permite até <span className="font-semibold text-foreground">{selectedPlano.qtdDias}x na semana</span>.
-                                </p>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
+                                    <p>
+                                        Plano selecionado: <span className="font-semibold text-foreground">{selectedPlano.nome}</span>.
+                                        Permite até <span className="font-semibold text-foreground">{selectedPlano.qtdDias}x na semana</span>.
+                                    </p>
+                                    <span className={cn(
+                                        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold w-fit",
+                                        isLimitReached ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                    )}>
+                                        {totalSelectedDays} / {selectedPlano.qtdDias} dias selecionados
+                                    </span>
+                                </div>
                             )}
                         </div>
 
@@ -262,29 +279,46 @@ export function MatriculaForm({
                                                         <FormControl>
                                                             <DiasSemanaSelector
                                                                 value={dField.value}
-                                                                onChange={dField.onChange}
+                                                                availableDays={aula?.diasSemana}
+                                                                isLimitReached={isLimitReached}
+                                                                onChange={(newValue) => {
+                                                                    const currentAulas = form.getValues("aulas") || [];
+                                                                    const otherAulasDays = currentAulas
+                                                                        .filter((_, i) => i !== index)
+                                                                        .reduce((acc, a) => acc + (a.diasSemana?.length || 0), 0);
+                                                                    const totalWithNew = otherAulasDays + newValue.length;
+
+                                                                    // Permitir apenas se não estiver adicionando além do limite
+                                                                    if (newValue.length > dField.value.length && totalWithNew > limit) {
+                                                                        return;
+                                                                    }
+                                                                    dField.onChange(newValue);
+                                                                }}
                                                                 error={form.formState.errors.aulas?.[index]?.diasSemana?.message}
                                                             />
                                                         </FormControl>
                                                     </FormItem>
                                                 )}
                                             />
-                                            <FormField
-                                                control={form.control}
-                                                name={`aulas.${index}.horario`}
-                                                render={({ field: hField }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Horário Específico</FormLabel>
-                                                        <FormControl>
-                                                            <HorarioInput
-                                                                value={hField.value}
-                                                                onChange={hField.onChange}
-                                                                error={form.formState.errors.aulas?.[index]?.horario?.message}
-                                                            />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
+
+                                            {selectedPlano?.tipo === "INDIVIDUAL" && (
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`aulas.${index}.horario`}
+                                                    render={({ field: hField }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Horário Específico</FormLabel>
+                                                            <FormControl>
+                                                                <HorarioInput
+                                                                    value={hField.value}
+                                                                    onChange={hField.onChange}
+                                                                    error={form.formState.errors.aulas?.[index]?.horario?.message}
+                                                                />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            )}
                                         </CardContent>
                                     </Card>
                                 );
