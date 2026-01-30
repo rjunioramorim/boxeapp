@@ -1,0 +1,306 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+    FormDescription,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { matriculaCompletaSchema, type MatriculaCompletaValues } from "@/schemas/matriculas";
+import type { planos, aulas } from "@/db/schema";
+import { DiasSemanaSelector } from "@/components/aulas/dias-semana-selector";
+import { HorarioInput } from "@/components/aulas/horario-input";
+
+type Plano = typeof planos.$inferSelect;
+type Aula = typeof aulas.$inferSelect;
+
+interface MatriculaFormProps {
+    alunoId: string;
+    planos: (Plano & { aulaIds: string[] })[];
+    aulas: Aula[];
+    onSubmit: (data: any) => Promise<any>;
+    onCancel?: () => void;
+}
+
+export function MatriculaForm({
+    alunoId,
+    planos,
+    aulas,
+    onSubmit,
+    onCancel,
+}: MatriculaFormProps) {
+    const [selectedPlanoId, setSelectedPlanoId] = useState<string>("");
+
+    const form = useForm<MatriculaCompletaValues>({
+        resolver: zodResolver(matriculaCompletaSchema),
+        defaultValues: {
+            alunoId,
+            planoId: "",
+            diaVencimento: 5,
+            dataInicio: new Date(),
+            aulas: [],
+        },
+    });
+
+    const { fields, append, remove, replace } = useFieldArray({
+        control: form.control,
+        name: "aulas",
+    });
+
+    // Aulas disponíveis para o plano selecionado
+    const availableAulas = useMemo(() => {
+        const plano = planos.find((p) => p.id === selectedPlanoId);
+        if (!plano) return [];
+        return aulas.filter((a) => plano.aulaIds.includes(a.id));
+    }, [selectedPlanoId, planos, aulas]);
+
+    const handlePlanoChange = (id: string) => {
+        setSelectedPlanoId(id);
+        form.setValue("planoId", id);
+
+        // Auto-preencher aulas se for plano coletivo ou individual com aulas fixas?
+        // PRD sugere que o usuário selecione as aulas.
+        replace([]); // Reset aulas selecionadas ao mudar de plano
+    };
+
+    const toggleAula = (aula: Aula) => {
+        const index = fields.findIndex((f) => f.aulaId === aula.id);
+        if (index > -1) {
+            remove(index);
+        } else {
+            append({
+                aulaId: aula.id,
+                diasSemana: aula.diasSemana,
+                horario: aula.horario.slice(0, 5),
+            });
+        }
+    };
+
+    const handleSubmit = async (data: MatriculaCompletaValues) => {
+        // Converter data para string para passar pela server action se necessário
+        // Mas a schema já valida como Date. 
+        // Vamos transformar para o formato esperado pela server action (JSON-friendly)
+        const payload = {
+            ...data,
+            dataInicio: data.dataInicio.toISOString().split("T")[0],
+        };
+        const result = await onSubmit(payload);
+        if (result?.success === false && result.issues) {
+            result.issues.forEach((issue: any) => {
+                form.setError(issue.path[0], { message: issue.message });
+            });
+        }
+    };
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+                <div className="grid gap-6 sm:grid-cols-2">
+                    {/* Seleção de Plano */}
+                    <FormField
+                        control={form.control}
+                        name="planoId"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Plano de Treino</FormLabel>
+                                <Select onValueChange={handlePlanoChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger className="min-h-[44px]">
+                                            <SelectValue placeholder="Selecione um plano" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {planos.map((p) => (
+                                            <SelectItem key={p.id} value={p.id}>
+                                                {p.nome} - R$ {p.valor} ({p.tipo})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Dia de Vencimento */}
+                    <FormField
+                        control={form.control}
+                        name="diaVencimento"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Dia de Vencimento</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={31}
+                                        {...field}
+                                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                        className="min-h-[44px]"
+                                    />
+                                </FormControl>
+                                <FormDescription>Dia do mês para cobrança da mensalidade.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Data de Início */}
+                    <FormField
+                        control={form.control}
+                        name="dataInicio"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Data de Início</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="date"
+                                        value={field.value instanceof Date ? field.value.toISOString().split("T")[0] : ""}
+                                        onChange={(e) => field.onChange(new Date(e.target.value))}
+                                        className="min-h-[44px]"
+                                    />
+                                </FormControl>
+                                <FormDescription>Data em que o aluno começará a treinar.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                {/* Seleção de Aulas */}
+                {selectedPlanoId && (
+                    <div className="space-y-4">
+                        <div>
+                            <FormLabel className="text-base">Aulas do Plano</FormLabel>
+                            <p className="text-sm text-muted-foreground">
+                                Selecione as aulas que o aluno frequentará.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            {availableAulas.map((aula) => {
+                                const isSelected = fields.some((f) => f.aulaId === aula.id);
+                                return (
+                                    <Card
+                                        key={aula.id}
+                                        className={`cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : ''}`}
+                                        onClick={() => toggleAula(aula)}
+                                    >
+                                        <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
+                                            <div>
+                                                <CardTitle className="text-sm font-bold">{aula.nome}</CardTitle>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {aula.horario.slice(0, 5)} - {aula.duracaoMinutos} min
+                                                </div>
+                                            </div>
+                                            <Checkbox checked={isSelected} onCheckedChange={() => { }} />
+                                        </CardHeader>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                        {availableAulas.length === 0 && (
+                            <p className="text-sm text-destructive font-medium bg-destructive/10 p-3 rounded-md">
+                                Este plano não possui aulas vinculadas. Verifique as configurações do plano.
+                            </p>
+                        )}
+                        <FormMessage>{form.formState.errors.aulas?.message}</FormMessage>
+                    </div>
+                )}
+
+                {/* Configuração de Horários Customizados (Se aulas selecionadas) */}
+                {fields.length > 0 && (
+                    <div className="space-y-6">
+                        <h3 className="text-lg font-semibold border-t pt-6">Configurar Horários do Aluno</h3>
+                        <div className="space-y-8">
+                            {fields.map((field, index) => {
+                                const aula = aulas.find(a => a.id === field.aulaId);
+                                return (
+                                    <Card key={field.id} className="border-l-4 border-l-primary">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">
+                                                {aula?.nome}
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <FormField
+                                                control={form.control}
+                                                name={`aulas.${index}.diasSemana`}
+                                                render={({ field: dField }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Dias da Semana</FormLabel>
+                                                        <FormControl>
+                                                            <DiasSemanaSelector
+                                                                value={dField.value}
+                                                                onChange={dField.onChange}
+                                                                error={form.formState.errors.aulas?.[index]?.diasSemana?.message}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name={`aulas.${index}.horario`}
+                                                render={({ field: hField }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Horário Específico</FormLabel>
+                                                        <FormControl>
+                                                            <HorarioInput
+                                                                value={hField.value}
+                                                                onChange={hField.onChange}
+                                                                error={form.formState.errors.aulas?.[index]?.horario?.message}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-end border-t pt-6">
+                    {onCancel && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onCancel}
+                            className="min-h-[44px] touch-manipulation"
+                        >
+                            Cancelar
+                        </Button>
+                    )}
+                    <Button
+                        type="submit"
+                        disabled={form.formState.isSubmitting || fields.length === 0}
+                        className="min-h-[44px] touch-manipulation"
+                    >
+                        {form.formState.isSubmitting ? "Processando..." : "Confirmar Matrícula"}
+                    </Button>
+                </div>
+            </form>
+        </Form>
+    );
+}

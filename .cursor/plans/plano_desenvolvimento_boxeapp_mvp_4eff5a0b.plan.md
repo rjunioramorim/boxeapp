@@ -126,7 +126,7 @@ flowchart LR
 
 ---
 
-## FASE 4: CRUD de Aulas (1-2 dias)
+## FASE 4: CRUD de Aulas (1-2 dias) ✅ *Concluído*
 
 1. **Queries** em `lib/db/queries/aulas.ts`: getAll, getById, getByPlanoId (aulas de um plano), create, update, delete.
 2. **Server Actions** para aulas (create, update, delete) e para vínculo planos-aulas (associar/desassociar aulas a um plano).
@@ -146,8 +146,8 @@ flowchart LR
 ## FASE 5: CRUD de Alunos e Matrículas (3-4 dias)
 
 1. **Queries**
-  - `lib/db/queries/alunos.ts`: getAll (com filtros status, nome, telefone), getById com matrícula ativa, pagamentos recentes, presença.
-  - `lib/db/queries/matriculas.ts`: createMatriculaCompleta (transação: aluno ou uso existente, matrícula, matriculas_aulas, primeiro pagamento, agendamentos 7 dias); getByAlunoId; atualizar matrícula.
+  - `src/db/queries/alunos.ts`: getAll (com filtros status, nome, telefone), getById com matrícula ativa, pagamentos recentes, presença.
+  - `src/db/queries/matriculas.ts`: createMatriculaCompleta (transação: aluno ou uso existente, matrícula, matriculas_aulas, primeiro pagamento, agendamentos 7 dias); getByAlunoId; atualizar matrícula.
 2. **Server Actions**
   - Criar aluno; criar aluno + matrícula completa (novo cadastro); atualizar aluno; atualizar matrícula/horários.
 3. **Páginas (mobile-first)**
@@ -166,7 +166,7 @@ flowchart LR
 
 ## FASE 6: Gestão de Pagamentos (2-3 dias)
 
-1. **Queries** em `lib/db/queries/pagamentos.ts`: listar com filtros (mês, status, aluno), getById, confirmar (atualizar valor_pago, data_pagamento, status = PAGO).
+1. **Queries** em `src/db/queries/pagamentos.ts`: listar com filtros (mês, status, aluno), getById, confirmar (atualizar valor_pago, data_pagamento, status = PAGO).
 2. **Server Actions**: listar pagamentos (filtros), confirmar pagamento.
 3. **Página (mobile-first)** `app/(dashboard)/pagamentos/page.tsx`:
   - **Mobile**: filtros em drawer/sheet ou topo colapsável; lista de cards (um pagamento por card) com informações principais e botão "Confirmar" grande.
@@ -182,7 +182,7 @@ flowchart LR
 
 ## FASE 7: Gestão de Agendamentos (3-4 dias)
 
-1. **Queries** em `lib/db/queries/agendamentos.ts`: getByDia (agrupados por aula/horário), getBySemana; marcarPresenca (status PRESENTE/AUSENTE); adicionar aluno (tipo MANUAL); remover (status CANCELADO). Respeitar unicidade (aula_id, aluno_id, data, horario).
+1. **Queries** em `src/db/queries/agendamentos.ts`: getByDia (agrupados por aula/horário), getBySemana; marcarPresenca (status PRESENTE/AUSENTE); adicionar aluno (tipo MANUAL); remover (status CANCELADO). Respeitar unicidade (aula_id, aluno_id, data, horario).
 2. **Server Actions**: listar agendamentos do dia/semana; marcar presença; adicionar aluno a aula; remover aluno de aula.
 3. **Página (mobile-first)** `app/(dashboard)/agendamentos/page.tsx`:
   - **Mobile**: filtro de data no topo (date picker mobile-friendly); lista vertical de cards por horário/aula; cada card: nome da aula, horário, lista de alunos com checkboxes grandes (min-height 44px) para presença; botões "Adicionar aluno" e "Remover" grandes e touch-friendly.
@@ -199,7 +199,7 @@ flowchart LR
 
 ## FASE 8: Alteração de Horários (2 dias)
 
-1. **Serviço** `lib/services/alteracao-horarios.ts`: `alterarHorariosMatricula(matriculaId, novosHorarios)`: calcular próximo vencimento (dia_vencimento da matrícula); deletar agendamentos com status AGENDADO entre hoje e vencimento; atualizar `matriculas_aulas`; recriar agendamentos com novos horários/dias até o vencimento. Validar conflitos (mesmo aluno, mesmo dia/horário).
+1. **Serviço** `src/services/alteracao-horarios.ts`: `alterarHorariosMatricula(matriculaId, novosHorarios)`: calcular próximo vencimento (dia_vencimento da matrícula); deletar agendamentos com status AGENDADO entre hoje e vencimento; atualizar `matriculas_aulas`; recriar agendamentos com novos horários/dias até o vencimento. Validar conflitos (mesmo aluno, mesmo dia/horário).
 2. **Server Action** que chama esse serviço e retorna quantidade de agendamentos atualizados.
 3. **Componente (mobile-friendly)** `EditarHorariosDialog`:
   - **Mobile**: dialog fullscreen ou quase fullscreen; listar aulas da matrícula em cards; por aula: seletor de dias da semana (grid touch-friendly) e input de horário grande; preview antes de salvar; botões grandes no bottom.
@@ -210,19 +210,19 @@ flowchart LR
 
 ## FASE 9: Jobs e automações (2 dias)
 
-1. **Lógica em** `lib/jobs/`:
+1. **Lógica em** `src/jobs/`:
   - `gerar-pagamentos.ts`: matrículas ATIVAS; para cada uma, criar registro em `pagamentos` (mês seguinte, valor do plano, data_vencimento conforme dia_vencimento, PENDENTE). Timezone America/Sao_Paulo.  
   - `gerar-agendamentos.ts`: matrículas ATIVAS; para cada matrícula e cada `matriculas_aulas`, gerar agendamentos para os próximos 7 dias conforme dias_semana e horário; inserir apenas se não existir (unicidade).  
   - `atualizar-status.ts`: (1) agendamentos do dia com status AGENDADO → AUSENTE; (2) pagamentos PENDENTES com data_vencimento &lt; hoje → ATRASADO.
-2. **Route Handlers** em `app/api/cron/gerar-pagamentos/route.ts`, `gerar-agendamentos/route.ts`, `atualizar-status/route.ts`: método POST; validar header (ex.: `Authorization: Bearer CRON_SECRET`); chamar a lógica correspondente; retornar JSON de resumo.
+2. **Route Handlers** em `src/app/api/cron/gerar-pagamentos/route.ts`, `gerar-agendamentos/route.ts`, `atualizar-status/route.ts`: método POST; validar header (ex.: `Authorization: Bearer CRON_SECRET`); chamar a lógica correspondente; retornar JSON de resumo.
 3. **Produção:** documentar opção A (GitHub Actions scheduled workflows chamando essas rotas) e opção B (node-cron dentro do container).
 
 ---
 
 ## FASE 10: Dashboard e indicadores (1-2 dias)
 
-1. **Queries** em `lib/db/queries/dashboard.ts`: getTotalAlunosAtivos, getPagamentosPendentesMes, getAgendamentosHoje, getTaxaPresencaMes (conforme PRD 4.5).
-2. **Página (mobile-first)** `app/(dashboard)/page.tsx`:
+1. **Queries** em `src/db/queries/dashboard.ts`: getTotalAlunosAtivos, getPagamentosPendentesMes, getAgendamentosHoje, getTaxaPresencaMes (conforme PRD 4.5).
+2. **Página (mobile-first)** `src/app/(dashboard)/page.tsx`:
   - **Mobile**: grid de cards em coluna única (`grid-cols-1`); cada card ocupa largura total; scroll vertical.
   - **Desktop**: grid de cards responsivo (`grid-cols-2 lg:grid-cols-4`).
   - Server Component que busca esses indicadores e exibe em cards (`StatsCard`).

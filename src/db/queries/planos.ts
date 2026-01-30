@@ -16,6 +16,23 @@ export async function getAllPlanos() {
 }
 
 /**
+ * Lista todos os planos com suas aulas vinculadas (IDs)
+ */
+export async function getAllPlanosWithAulas() {
+  const allPlanos = await db.query.planos.findMany({
+    orderBy: [desc(planos.createdAt)],
+    with: {
+      planosAulas: true
+    }
+  });
+
+  return allPlanos.map(p => ({
+    ...p,
+    aulaIds: p.planosAulas.map(pa => pa.aulaId)
+  }));
+}
+
+/**
  * Busca um plano por ID
  */
 export async function getPlanoById(id: string) {
