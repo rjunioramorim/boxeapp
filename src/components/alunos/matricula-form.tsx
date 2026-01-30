@@ -201,25 +201,30 @@ export function MatriculaForm({
                         <div className="grid gap-4 sm:grid-cols-2">
                             {availableAulas.map((aula) => {
                                 const isSelected = fields.some((f) => f.aulaId === aula.id);
+                                const id = `aula-select-${aula.id}`;
                                 return (
-                                    <Label
+                                    <div
                                         key={aula.id}
                                         className={cn(
-                                            "flex items-center justify-between p-4 rounded-md border cursor-pointer transition-colors hover:bg-accent/50",
+                                            "flex items-center justify-between p-4 rounded-md border transition-colors hover:bg-accent/50 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
                                             isSelected && "bg-accent border-primary"
                                         )}
                                     >
-                                        <div className="flex flex-col gap-1">
+                                        <Label
+                                            htmlFor={id}
+                                            className="flex flex-col gap-1 flex-1 cursor-pointer select-none"
+                                        >
                                             <span className="text-sm font-bold">{aula.nome}</span>
                                             <div className="text-xs text-muted-foreground font-normal">
                                                 {aula.horario.slice(0, 5)} - {aula.duracaoMinutos} min
                                             </div>
-                                        </div>
+                                        </Label>
                                         <Checkbox
+                                            id={id}
                                             checked={isSelected}
                                             onCheckedChange={() => toggleAula(aula)}
                                         />
-                                    </Label>
+                                    </div>
                                 );
                             })}
                         </div>
