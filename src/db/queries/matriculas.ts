@@ -108,7 +108,7 @@ export async function createMatriculaCompleta(data: {
         const agendamentosValues = [];
         for (let i = 0; i < 7; i++) {
             const dataAgendamento = addDays(data.dataInicio, i);
-            const diaSemana = dataAgendamento.getDay() === 0 ? 7 : dataAgendamento.getDay(); // JS 0=Dom, Drizzle 1=Seg...7=Dom
+            const diaSemana = dataAgendamento.getUTCDay() === 0 ? 7 : dataAgendamento.getUTCDay(); // UTC 0=Dom, Map 1=Seg...7=Dom
 
             for (const aula of data.aulas) {
                 if (aula.diasSemana.includes(diaSemana)) {
@@ -161,6 +161,9 @@ export async function updateMatriculaAulas(
     dataVencimentoProximo: Date
 ) {
     return await db.transaction(async (tx) => {
+        const agora = new Date();
+        const hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));
+
         // 1. Buscar dados da matrícula para alunoId
         const matricula = await tx.query.matriculas.findFirst({
             where: eq(matriculas.id, matriculaId)
@@ -183,27 +186,37 @@ export async function updateMatriculaAulas(
             );
         }
 
-        // 4. Deletar agendamentos futuros (apenas os que ainda estão como AGENDADO)
-        // De hoje até o próximo vencimento
-        const hoje = startOfDay(new Date());
+        // 4. Deletar TODOS os agendamentos futuros desta matrícula
+        // A partir de HOJE (inclusive) para evitar duplicações
+        const hojeFormatado = format(hoje, "yyyy-MM-dd");
+
+        // Deletar usando comparação de data em formato string
         await tx.delete(agendamentos).where(
             and(
                 eq(agendamentos.matriculaId, matriculaId),
-                eq(agendamentos.status, "AGENDADO"),
-                sql`${agendamentos.data} >= ${hoje}`
+                sql`${agendamentos.data} >= ${hojeFormatado}`
             )
         );
 
-        // 5. Recriar agendamentos até a data de vencimento (máximo 31 dias por segurança)
+        console.log(`[updateMatriculaAulas] Deletados agendamentos futuros (>= ${hojeFormatado}) da matrícula ${matriculaId}`);
+
+        // 5. Recriar agendamentos
+        // Calcular data do próximo vencimento (normalizado para UTC)
+        const diaVencimento = matricula.diaVencimento;
+        let proximoVencimento = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), diaVencimento));
+
+        // Se o dia de vencimento deste mês já passou, o próximo é no mês que vem
+        // Usamos getUTCDate para comparar com o dia de vencimento em UTC
+        if (agora.getUTCDate() > diaVencimento) {
+            proximoVencimento.setUTCMonth(proximoVencimento.getUTCMonth() + 1);
+        }
+
         const agendamentosValues = [];
-        let dataLoop = hoje;
+        let dataAtual = hoje;
 
-        // Loop até o vencimento ou por no máximo 31 dias
-        for (let i = 0; i < 32; i++) {
-            const dataAgendamento = addDays(hoje, i);
-            if (dataAgendamento > dataVencimentoProximo) break;
-
-            const diaSemana = dataAgendamento.getDay() === 0 ? 7 : dataAgendamento.getDay();
+        // Loop até o vencimento, mas não além
+        while (dataAtual <= proximoVencimento) { // Changed to use proximoVencimento
+            const diaSemana = dataAtual.getUTCDay() === 0 ? 7 : dataAtual.getUTCDay();
 
             for (const aula of aulasData) {
                 if (aula.diasSemana.includes(diaSemana)) {
@@ -211,17 +224,22 @@ export async function updateMatriculaAulas(
                         aulaId: aula.aulaId,
                         alunoId: matricula.alunoId,
                         matriculaId: matricula.id,
-                        data: dataAgendamento,
+                        data: dataAtual,
                         horario: aula.horario,
                         status: "AGENDADO" as const,
                         tipo: "AUTOMATICO" as const,
                     });
                 }
             }
+
+            dataAtual = addDays(dataAtual, 1);
         }
 
         if (agendamentosValues.length > 0) {
             await tx.insert(agendamentos).values(agendamentosValues);
+            console.log(`[updateMatriculaAulas] Criados ${agendamentosValues.length} novos agendamentos até ${format(dataVencimentoProximo, "yyyy-MM-dd")}`);
+        } else {
+            console.log(`[updateMatriculaAulas] Nenhum agendamento criado (sem dias selecionados ou período inválido)`);
         }
 
         return agendamentosValues.length;

@@ -70,14 +70,15 @@ export async function atualizarHorariosMatriculaService(
     const matricula = await getMatriculaById(matriculaId);
     if (!matricula) throw new Error("Matrícula não encontrada");
 
-    // Calcular data do próximo vencimento
-    const hoje = new Date();
+    // Calcular data do próximo vencimento (normalizado para UTC)
+    const agora = new Date();
     const diaVencimento = matricula.diaVencimento;
-    let proximoVencimento = new Date(hoje.getFullYear(), hoje.getMonth(), diaVencimento);
+    let proximoVencimento = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), diaVencimento));
 
     // Se o dia de vencimento deste mês já passou, o próximo é no mês que vem
-    if (hoje.getDate() > diaVencimento) {
-        proximoVencimento.setMonth(proximoVencimento.getMonth() + 1);
+    // Usamos getUTCDate para comparar com o dia de vencimento em UTC
+    if (agora.getUTCDate() > diaVencimento) {
+        proximoVencimento.setUTCMonth(proximoVencimento.getUTCMonth() + 1);
     }
 
     return await updateMatriculaAulas(matriculaId, aulas, proximoVencimento);

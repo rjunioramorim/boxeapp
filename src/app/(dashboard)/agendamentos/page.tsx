@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { format, addDays, subDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatarDataDB } from "@/lib/utils";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AgendamentoList } from "@/components/agendamentos/agendamento-list";
@@ -51,12 +51,12 @@ export default async function AgendamentosPage({
 
                 <div className="flex flex-col items-center">
                     <span className="text-sm font-bold text-primary uppercase tracking-tighter">
-                        {format(dataSelecionada, "EEEE", { locale: ptBR })}
+                        {formatarDataDB(dataSelecionada, "EEEE")}
                     </span>
                     <div className="flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                         <span className="text-lg font-black tracking-tight">
-                            {format(dataSelecionada, "dd 'de' MMMM", { locale: ptBR })}
+                            {formatarDataDB(dataSelecionada, "dd 'de' MMMM")}
                         </span>
                     </div>
                 </div>

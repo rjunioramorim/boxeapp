@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useState, useMemo, useEffect } from "react";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Dialog,
@@ -21,11 +21,15 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { DiasSemanaSelector } from "@/components/aulas/dias-semana-selector";
 import { HorarioInput } from "@/components/aulas/horario-input";
 import { atualizarHorarios } from "@/actions/matriculas";
+import { useMatriculaStore } from "@/store/use-matricula-store";
+import { toast } from "sonner";
 
 const schema = z.object({
     aulas: z.array(z.object({
@@ -33,22 +37,24 @@ const schema = z.object({
         aulaNome: z.string(),
         diasSemana: z.array(z.number().min(1).max(7)).min(1, "Selecione pelo menos um dia"),
         horario: z.string().regex(/^\d{2}:\d{2}$/, "Horário inválido"),
-    })),
+        diasDisponiveis: z.array(z.number()).optional(),
+    })).min(1, "Selecione pelo menos uma aula"),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 interface EditarHorariosDialogProps {
     matricula: any;
+    todasAulas: any[]; // Todas as aulas disponíveis no sistema
     onOpenChange: (open: boolean) => void;
 }
 
 export function EditarHorariosDialog({
     matricula,
+    todasAulas,
     onOpenChange,
 }: EditarHorariosDialogProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
@@ -56,29 +62,69 @@ export function EditarHorariosDialog({
             aulas: matricula.matriculasAulas.map((ma: any) => ({
                 aulaId: ma.aula.id,
                 aulaNome: ma.aula.nome,
-                diasSemana: ma.diasSemana,
-                horario: ma.horario.slice(0, 5),
+                diasSemana: ma.diasSemana || [],
+                horario: ma.horario?.slice(0, 5) || "00:00",
+                diasDisponiveis: ma.aula.diasSemana || [],
             })),
         },
     });
 
-    const { fields } = useFieldArray({
+    const { fields, append, remove } = useFieldArray({
         control: form.control,
         name: "aulas",
     });
 
-    // Calcular limite global de dias
-    const watchedAulas = form.watch("aulas") || [];
-    const totalSelectedDays = useMemo(() => {
-        return watchedAulas.reduce((acc, a) => acc + (a.diasSemana?.length || 0), 0);
-    }, [watchedAulas]);
+    const { setLimit, syncFromAulas, limit, totalSelectedDays, isLimitReached, reset } = useMatriculaStore();
 
-    const limit = Number(matricula.plano.qtdDias || 0);
-    const isLimitReached = totalSelectedDays >= limit;
+    // Sincronizar limite inicial
+    useEffect(() => {
+        setLimit(Number(matricula.plano.qtdDias || 0));
+    }, [matricula.plano.qtdDias, setLimit]);
+
+    // Sincronizar total de dias quando as aulas mudam
+    const watchedAulas = useWatch({
+        control: form.control,
+        name: "aulas",
+    });
+
+    useEffect(() => {
+        syncFromAulas(watchedAulas || []);
+    }, [watchedAulas, syncFromAulas]);
+
+    // Limpar store ao desmontar
+    useEffect(() => {
+        return () => reset();
+    }, [reset]);
+
+    // Aulas disponíveis que ainda não foram selecionadas
+    const aulasDisponiveis = useMemo(() => {
+        const currentAulas = form.getValues("aulas") || [];
+        const selectedIds = new Set(currentAulas.map(a => a.aulaId));
+        return todasAulas.filter(aula => aula.ativo && !selectedIds.has(aula.id));
+    }, [todasAulas, watchedAulas]);
+
+    const toggleAula = (aula: any) => {
+        const currentAulas = form.getValues("aulas") || [];
+        const index = currentAulas.findIndex(a => a.aulaId === aula.id);
+
+        if (index > -1) {
+            // Remover aula
+            remove(index);
+        } else {
+            // Adicionar aula
+            append({
+                aulaId: aula.id,
+                aulaNome: aula.nome,
+                diasSemana: [],
+                horario: aula.horario.slice(0, 5),
+                diasDisponiveis: aula.diasSemana || [],
+            });
+        }
+    };
 
     const onSubmit = async (data: FormValues) => {
         setIsSubmitting(true);
-        setError(null);
+        toast.loading("Salvando alterações...");
 
         const result = await atualizarHorarios(
             matricula.id,
@@ -90,10 +136,13 @@ export function EditarHorariosDialog({
             }))
         );
 
+        toast.dismiss();
+
         if (result.success) {
+            toast.success("Horários atualizados com sucesso!");
             onOpenChange(false);
         } else {
-            setError(result.error || "Erro ao atualizar horários");
+            toast.error(result.error || "Erro ao atualizar horários");
         }
 
         setIsSubmitting(false);
@@ -101,91 +150,154 @@ export function EditarHorariosDialog({
 
     return (
         <Dialog open={true} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Alterar Horários</DialogTitle>
-                    <DialogDescription className="space-y-2">
-                        <p>Ajuste os dias e horários das aulas deste aluno.</p>
-                        <div className="flex items-center gap-2 mt-2">
-                            <span className="text-sm font-semibold">
-                                Plano: {matricula.plano.nome} ({limit}x na semana)
-                            </span>
+                    <DialogTitle>Editar Horários</DialogTitle>
+                    <DialogDescription asChild>
+                        <div className="space-y-2 text-sm text-muted-foreground">
+                            <p>
+                                Plano: <span className="font-semibold text-foreground">{matricula.plano.nome}</span>
+                                {" "}• Limite: <span className="font-semibold text-foreground">{matricula.plano.qtdDias}x na semana</span>
+                            </p>
                             <span className={cn(
-                                "px-2 py-0.5 rounded-full text-xs font-bold",
+                                "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold w-fit",
                                 isLimitReached ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                             )}>
-                                {totalSelectedDays} / {limit} dias selecionados
+                                {totalSelectedDays} / {matricula.plano.qtdDias} dias selecionados
                             </span>
                         </div>
                     </DialogDescription>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-                        {fields.map((field, index) => (
-                            <Card key={field.id} className="border-l-4 border-l-primary">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-bold uppercase tracking-wider">
-                                        {field.aulaNome}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <FormField
-                                        control={form.control}
-                                        name={`aulas.${index}.diasSemana`}
-                                        render={({ field: dField }) => {
-                                            const matriculaAula = matricula.matriculasAulas.find((ma: any) => ma.aula.id === field.aulaId);
-                                            return (
-                                                <FormItem>
-                                                    <FormLabel>Dias da Semana</FormLabel>
-                                                    <FormControl>
-                                                        <DiasSemanaSelector
-                                                            value={dField.value}
-                                                            availableDays={matriculaAula?.aula.diasSemana}
-                                                            isLimitReached={isLimitReached}
-                                                            onChange={(newValue) => {
-                                                                const currentAulas = form.getValues("aulas") || [];
-                                                                const otherAulasDays = currentAulas
-                                                                    .filter((_, i) => i !== index)
-                                                                    .reduce((acc, a) => acc + (a.diasSemana?.length || 0), 0);
-                                                                const totalWithNew = otherAulasDays + newValue.length;
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        {/* Seleção de Aulas Disponíveis */}
+                        {aulasDisponiveis.length > 0 && (
+                            <div className="space-y-3">
+                                <FormLabel className="text-base">Adicionar Aulas</FormLabel>
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                    {aulasDisponiveis.map((aula) => {
+                                        const id = `aula-add-${aula.id}`;
+                                        return (
+                                            <div
+                                                key={aula.id}
+                                                className="flex items-center justify-between p-3 rounded-md border transition-colors hover:bg-accent/50"
+                                            >
+                                                <Label
+                                                    htmlFor={id}
+                                                    className="flex flex-col gap-1 flex-1 cursor-pointer"
+                                                >
+                                                    <span className="text-sm font-medium">{aula.nome}</span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {aula.horario.slice(0, 5)} - {aula.duracaoMinutos} min
+                                                    </span>
+                                                </Label>
+                                                <Checkbox
+                                                    id={id}
+                                                    checked={false}
+                                                    onCheckedChange={() => toggleAula(aula)}
+                                                />
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
-                                                                if (newValue.length > dField.value.length && totalWithNew > limit) {
-                                                                    return;
-                                                                }
-                                                                dField.onChange(newValue);
-                                                            }}
-                                                            error={form.formState.errors.aulas?.[index]?.diasSemana?.message}
-                                                        />
-                                                    </FormControl>
-                                                </FormItem>
-                                            );
-                                        }}
-                                    />
-                                    {matricula.plano.tipo === "INDIVIDUAL" && (
-                                        <FormField
-                                            control={form.control}
-                                            name={`aulas.${index}.horario`}
-                                            render={({ field: hField }) => (
-                                                <FormItem>
-                                                    <FormLabel>Horário</FormLabel>
-                                                    <FormControl>
-                                                        <HorarioInput
-                                                            value={hField.value}
-                                                            onChange={hField.onChange}
-                                                            error={form.formState.errors.aulas?.[index]?.horario?.message}
-                                                        />
-                                                    </FormControl>
-                                                </FormItem>
-                                            )}
-                                        />
-                                    )}
-                                </CardContent>
-                            </Card>
-                        ))}
+                        {/* Aulas Selecionadas */}
+                        {fields.length > 0 && (
+                            <div className="space-y-4">
+                                <FormLabel className="text-base">Aulas Selecionadas</FormLabel>
+                                {fields.map((field, index) => {
+                                    const currentAulas = form.getValues("aulas") || [];
+                                    const aula = currentAulas[index];
+                                    return (
+                                        <Card key={field.id} className="border-l-4 border-l-primary">
+                                            <CardHeader className="pb-3">
+                                                <div className="flex items-center justify-between">
+                                                    <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">
+                                                        {aula?.aulaNome}
+                                                    </CardTitle>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => remove(index)}
+                                                        className="h-8 text-xs"
+                                                    >
+                                                        Remover
+                                                    </Button>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`aulas.${index}.diasSemana`}
+                                                    render={({ field: dField }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Dias da Semana</FormLabel>
+                                                            <FormControl>
+                                                                <DiasSemanaSelector
+                                                                    value={dField.value}
+                                                                    availableDays={aula?.diasDisponiveis}
+                                                                    isLimitReached={isLimitReached}
+                                                                    onChange={(newValue) => {
+                                                                        const currentAulas = form.getValues("aulas") || [];
+                                                                        const otherAulasDays = currentAulas
+                                                                            .filter((_, i) => i !== index)
+                                                                            .reduce((acc, a) => acc + (a.diasSemana?.length || 0), 0);
+                                                                        const totalWithNew = otherAulasDays + newValue.length;
 
-                        {error && (
-                            <div className="text-sm font-medium text-destructive">{error}</div>
+                                                                        const isReducing = newValue.length < (dField.value?.length || 0);
+
+                                                                        // Bloquear adição se ultrapassar o limite
+                                                                        if (!isReducing && totalWithNew > limit) {
+                                                                            return;
+                                                                        }
+
+                                                                        dField.onChange(newValue);
+
+                                                                        // Sincronizar store
+                                                                        const updatedAulas = currentAulas.map((a, i) =>
+                                                                            i === index ? { ...a, diasSemana: newValue } : a
+                                                                        );
+                                                                        syncFromAulas(updatedAulas);
+                                                                    }}
+                                                                    error={form.formState.errors.aulas?.[index]?.diasSemana?.message}
+                                                                />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                {matricula.plano.tipo === "INDIVIDUAL" && (
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`aulas.${index}.horario`}
+                                                        render={({ field: hField }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Horário</FormLabel>
+                                                                <FormControl>
+                                                                    <HorarioInput
+                                                                        value={hField.value}
+                                                                        onChange={hField.onChange}
+                                                                        error={form.formState.errors.aulas?.[index]?.horario?.message}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {fields.length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center py-8 border border-dashed rounded-md">
+                                Nenhuma aula selecionada. Adicione aulas acima.
+                            </p>
                         )}
 
                         <DialogFooter className="flex flex-col gap-2 sm:flex-row sticky bottom-0 bg-background pt-4 border-t">
@@ -200,7 +312,7 @@ export function EditarHorariosDialog({
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || fields.length === 0}
                                 className="min-h-[44px] touch-manipulation"
                             >
                                 {isSubmitting ? "Salvando..." : "Salvar Alterações"}

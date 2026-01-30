@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useState, useMemo, useEffect } from "react";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Form,
@@ -22,13 +22,13 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { matriculaCompletaSchema, type MatriculaCompletaValues } from "@/schemas/matriculas";
-import type { planos, aulas } from "@/db/schema";
+import { planos, aulas } from "@/db/schema";
 import { DiasSemanaSelector } from "@/components/aulas/dias-semana-selector";
+import { useMatriculaStore } from "@/store/use-matricula-store";
 import { HorarioInput } from "@/components/aulas/horario-input";
 import Link from "next/link";
 
@@ -77,37 +77,61 @@ export function MatriculaForm({
         return planos.find((p) => p.id === selectedPlanoId);
     }, [selectedPlanoId, planos]);
 
+    const { setLimit, syncFromAulas, limit, totalSelectedDays, isLimitReached, reset } = useMatriculaStore();
+
+    // Sincronizar limite quando o plano muda
+    useEffect(() => {
+        if (selectedPlano) {
+            setLimit(selectedPlano.qtdDias);
+        } else {
+            setLimit(0);
+        }
+    }, [selectedPlano, setLimit]);
+
+    // Sincronizar total de dias quando as aulas mudam usando useWatch para reatividade máxima
+    const watchedAulas = useWatch({
+        control: form.control,
+        name: "aulas",
+    }) || [];
+
+    useEffect(() => {
+        syncFromAulas(watchedAulas);
+    }, [watchedAulas, syncFromAulas]);
+
+    // Limpar store ao desmontar
+    useEffect(() => {
+        return () => reset();
+    }, [reset]);
+
     const handlePlanoChange = (id: string) => {
         setSelectedPlanoId(id);
         form.setValue("planoId", id);
         replace([]); // Resetar seleções ao trocar de plano para evitar carregar dias de plano anterior
+        syncFromAulas([]); // Limpar store também
     };
 
-    const watchedAulas = form.watch("aulas") || [];
-    const totalSelectedDays = useMemo(() => {
-        return watchedAulas.reduce((acc, a) => acc + (a.diasSemana?.length || 0), 0);
-    }, [watchedAulas]);
-
-    const limit = selectedPlano?.qtdDias || 0;
-    const isLimitReached = totalSelectedDays >= limit;
-
     const toggleAula = (aula: Aula) => {
-        const index = fields.findIndex((f) => f.aulaId === aula.id);
+        const currentAulas = form.getValues("aulas") || [];
+        const index = currentAulas.findIndex((f) => f.aulaId === aula.id);
+        let updatedAulas;
+
         if (index > -1) {
             remove(index);
+            updatedAulas = currentAulas.filter((_, i) => i !== index);
         } else {
-            append({
+            const newAulaEntry = {
                 aulaId: aula.id,
                 diasSemana: [], // Começa desmarcado
                 horario: aula.horario.slice(0, 5), // Horário padrão da aula
-            });
+            };
+            append(newAulaEntry);
+            updatedAulas = [...currentAulas, newAulaEntry];
         }
+        // Sincronizar store
+        syncFromAulas(updatedAulas);
     };
 
     const handleSubmit = async (data: MatriculaCompletaValues) => {
-        // Converter data para string para passar pela server action se necessário
-        // Mas a schema já valida como Date. 
-        // Vamos transformar para o formato esperado pela server action (JSON-friendly)
         const payload = {
             ...data,
             dataInicio: data.dataInicio.toISOString().split("T")[0],
@@ -218,7 +242,10 @@ export function MatriculaForm({
 
                         <div className="grid gap-4 sm:grid-cols-2">
                             {availableAulas.map((aula) => {
-                                const isSelected = fields.some((f) => f.aulaId === aula.id);
+                                const isSelected = fields.some((f) => {
+                                    const val = form.getValues(`aulas`) as any[];
+                                    return val?.some(v => v.aulaId === aula.id);
+                                });
                                 const id = `aula-select-${aula.id}`;
                                 return (
                                     <div
@@ -261,7 +288,9 @@ export function MatriculaForm({
                         <h3 className="text-lg font-semibold border-t pt-6">Configurar Horários do Aluno</h3>
                         <div className="space-y-8">
                             {fields.map((field, index) => {
-                                const aula = aulas.find(a => a.id === field.aulaId);
+                                const currentAulasValue = form.getValues("aulas") as any[];
+                                const aulaId = currentAulasValue[index]?.aulaId;
+                                const aula = aulas.find(a => a.id === aulaId);
                                 return (
                                     <Card key={field.id} className="border-l-4 border-l-primary">
                                         <CardHeader className="pb-2">
@@ -284,15 +313,24 @@ export function MatriculaForm({
                                                                 onChange={(newValue) => {
                                                                     const currentAulas = form.getValues("aulas") || [];
                                                                     const otherAulasDays = currentAulas
-                                                                        .filter((_, i) => i !== index)
-                                                                        .reduce((acc, a) => acc + (a.diasSemana?.length || 0), 0);
+                                                                        .filter((_: any, i: number) => i !== index)
+                                                                        .reduce((acc: number, a: any) => acc + (a.diasSemana?.length || 0), 0);
                                                                     const totalWithNew = otherAulasDays + newValue.length;
 
+                                                                    const isReducing = newValue.length < (dField.value?.length || 0);
+
                                                                     // Permitir apenas se não estiver adicionando além do limite
-                                                                    if (newValue.length > dField.value.length && totalWithNew > limit) {
+                                                                    if (!isReducing && totalWithNew > limit) {
                                                                         return;
                                                                     }
+
                                                                     dField.onChange(newValue);
+
+                                                                    // Sincronizar store IMEDIATAMENTE construindo o array atualizado manualmente
+                                                                    const updatedAulas = currentAulas.map((a, i) =>
+                                                                        i === index ? { ...a, diasSemana: newValue } : a
+                                                                    );
+                                                                    syncFromAulas(updatedAulas);
                                                                 }}
                                                                 error={form.formState.errors.aulas?.[index]?.diasSemana?.message}
                                                             />

@@ -11,9 +11,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { buscarAluno } from "@/actions/alunos";
 import { notFound } from "next/navigation";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatarDataDB } from "@/lib/utils";
 import { MatriculaCard } from "@/components/alunos/matricula-card";
+import { listarAulas } from "@/actions/aulas";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -49,6 +49,9 @@ export default async function AlunoPerfilPage({
 
     const matriculaAtiva = aluno.matriculas?.[0];
 
+    // Buscar todas as aulas para permitir edição
+    const todasAulas = await listarAulas();
+
     return (
         <div className="space-y-6 pb-10">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -78,7 +81,7 @@ export default async function AlunoPerfilPage({
 
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Card de Matrícula */}
-                <MatriculaCard alunoId={id} matricula={matriculaAtiva} />
+                <MatriculaCard alunoId={id} matricula={matriculaAtiva} todasAulas={todasAulas} />
 
                 {/* Card de Pagamentos Recentes */}
                 <Card>
@@ -96,10 +99,10 @@ export default async function AlunoPerfilPage({
                                     <div key={pag.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
                                         <div>
                                             <div className="font-medium">
-                                                {format(new Date(pag.mesReferencia), "MMMM/yyyy", { locale: ptBR })}
+                                                {formatarDataDB(pag.mesReferencia, "MMMM/yyyy")}
                                             </div>
                                             <div className="text-xs text-muted-foreground">
-                                                Venc: {format(new Date(pag.dataVencimento), "dd/MM/yyyy")}
+                                                Venc: {formatarDataDB(pag.dataVencimento, "dd/MM/yyyy")}
                                             </div>
                                         </div>
                                         <div className="text-right">
@@ -138,7 +141,7 @@ export default async function AlunoPerfilPage({
                                         <div>
                                             <div className="font-semibold text-sm">{ag.aula.nome}</div>
                                             <div className="text-xs text-muted-foreground uppercase">
-                                                {format(new Date(ag.data), "eeee, dd/MM", { locale: ptBR })}
+                                                {formatarDataDB(ag.data, "eeee, dd/MM")}
                                             </div>
                                         </div>
                                         <Badge variant={ag.status === "PRESENTE" ? "default" : ag.status === "AUSENTE" ? "destructive" : "outline"}>

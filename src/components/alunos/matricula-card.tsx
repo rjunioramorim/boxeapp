@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { GraduationCap, Edit2, Plus } from "lucide-react";
+import { formatarDataDB } from "@/lib/utils";
+import { GraduationCap, Edit2, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -12,11 +12,15 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EditarHorariosDialog } from "./editar-horarios-dialog";
+import { limparERecriarAgendamentos } from "@/actions/agendamentos-admin";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import Link from "next/link";
 
 interface MatriculaCardProps {
     alunoId: string;
     matricula: any;
+    todasAulas: any[];
 }
 
 const statusMatriculaMap = {
@@ -25,8 +29,27 @@ const statusMatriculaMap = {
     SUSPENSA: { label: "Suspensa", variant: "destructive" as const },
 };
 
-export function MatriculaCard({ alunoId, matricula }: MatriculaCardProps) {
+export function MatriculaCard({ alunoId, matricula, todasAulas }: MatriculaCardProps) {
     const [showEditarHorarios, setShowEditarHorarios] = useState(false);
+    const [isRecreating, setIsRecreating] = useState(false);
+    const router = useRouter();
+
+    const handleRecriarAgendamentos = async () => {
+        setIsRecreating(true);
+        toast.loading("Recriando agendamentos...");
+
+        const result = await limparERecriarAgendamentos(matricula.id, alunoId);
+        setIsRecreating(false);
+
+        toast.dismiss();
+
+        if (result.success) {
+            toast.success("Agendamentos recriados com sucesso!");
+            router.refresh();
+        } else {
+            toast.error(`Erro: ${result.error}`);
+        }
+    };
 
     if (!matricula) {
         return (
@@ -73,21 +96,33 @@ export function MatriculaCard({ alunoId, matricula }: MatriculaCardProps) {
                                 <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Plano</div>
                                 <div className="text-lg font-semibold">{matricula.plano.nome}</div>
                             </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-9 px-2 text-xs"
-                                onClick={() => setShowEditarHorarios(true)}
-                            >
-                                <Edit2 className="h-3 w-3 mr-1" />
-                                Alterar Horários
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-9 px-2 text-xs"
+                                    onClick={handleRecriarAgendamentos}
+                                    disabled={isRecreating}
+                                    title="Recriar agendamentos futuros"
+                                >
+                                    <RefreshCw className={`h-3 w-3 ${isRecreating ? 'animate-spin' : ''}`} />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9 px-2 text-xs"
+                                    onClick={() => setShowEditarHorarios(true)}
+                                >
+                                    <Edit2 className="h-3 w-3 mr-1" />
+                                    Alterar Horários
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <div className="text-sm font-medium text-muted-foreground">Início</div>
-                                <div>{format(new Date(matricula.dataInicio), "dd/MM/yyyy")}</div>
+                                <div>{formatarDataDB(matricula.dataInicio)}</div>
                             </div>
                             <div>
                                 <div className="text-sm font-medium text-muted-foreground">Vencimento</div>
@@ -122,6 +157,7 @@ export function MatriculaCard({ alunoId, matricula }: MatriculaCardProps) {
             {showEditarHorarios && (
                 <EditarHorariosDialog
                     matricula={matricula}
+                    todasAulas={todasAulas}
                     onOpenChange={setShowEditarHorarios}
                 />
             )}

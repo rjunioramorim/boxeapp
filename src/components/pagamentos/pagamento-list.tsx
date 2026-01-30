@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatarDataDB } from "@/lib/utils";
 import {
     CreditCard,
     Calendar,
@@ -91,7 +90,7 @@ export function PagamentoList({ pagamentos, onConfirm }: PagamentoListProps) {
                                         <span className="font-bold text-lg">{pag.aluno.nome}</span>
                                         <span className="text-sm text-muted-foreground flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
-                                            Ref: {format(new Date(pag.mesReferencia), "MMMM/yyyy", { locale: ptBR })}
+                                            Ref: {formatarDataDB(pag.mesReferencia, "MMMM/yyyy")}
                                         </span>
                                     </div>
                                     <Badge variant={status.variant} className="flex items-center gap-1">
@@ -120,7 +119,7 @@ export function PagamentoList({ pagamentos, onConfirm }: PagamentoListProps) {
                                         </Button>
                                     ) : pag.dataPagamento ? (
                                         <div className="text-right text-xs text-muted-foreground">
-                                            Pago em: {format(new Date(pag.dataPagamento), "dd/MM/yyyy")}
+                                            Pago em: {formatarDataDB(pag.dataPagamento, "dd/MM/yyyy")}
                                         </div>
                                     ) : null}
                                 </div>
@@ -150,9 +149,9 @@ export function PagamentoList({ pagamentos, onConfirm }: PagamentoListProps) {
                                 <TableRow key={pag.id}>
                                     <TableCell className="font-medium">{pag.aluno.nome}</TableCell>
                                     <TableCell className="capitalize">
-                                        {format(new Date(pag.mesReferencia), "MMMM/yyyy", { locale: ptBR })}
+                                        {formatarDataDB(pag.mesReferencia, "MMMM/yyyy")}
                                     </TableCell>
-                                    <TableCell>{format(new Date(pag.dataVencimento), "dd/MM/yyyy")}</TableCell>
+                                    <TableCell>{formatarDataDB(pag.dataVencimento, "dd/MM/yyyy")}</TableCell>
                                     <TableCell className="font-bold">
                                         {new Intl.NumberFormat("pt-BR", {
                                             style: "currency",
