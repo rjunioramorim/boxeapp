@@ -9,7 +9,9 @@ import {
   criarPlanoService,
   atualizarPlanoService,
   deletarPlanoService,
-} from "@/lib/services/planos";
+  buscarPlanoComAulasService,
+} from "@/services/planos";
+import { listarAulasService } from "@/services/aulas";
 import { planoSchema, planoUpdateSchema } from "@/schemas/planos";
 
 /**
@@ -25,7 +27,13 @@ export async function listarPlanos() {
  */
 export async function buscarPlano(id: string) {
   await requireAuth();
-  return await buscarPlanoService(id);
+  const plano = await buscarPlanoComAulasService(id);
+  if (!plano) return null;
+
+  return {
+    ...plano,
+    aulaIds: plano.aulas?.map(a => a.id) || []
+  };
 }
 
 /**
@@ -42,6 +50,9 @@ export async function criarPlano(formData: FormData) {
       ? parseInt(formData.get("qtdDias") as string)
       : undefined,
     ativo: formData.get("ativo") === "true" || formData.get("ativo") === "on",
+    aulaIds: formData.get("aulaIds")
+      ? JSON.parse(formData.get("aulaIds") as string)
+      : [],
   };
 
   const validated = planoSchema.parse(rawData);
@@ -88,6 +99,10 @@ export async function atualizarPlano(id: string, formData: FormData) {
   if (qtdDias) rawData.qtdDias = parseInt(qtdDias as string);
   if (ativo !== null) {
     rawData.ativo = ativo === "true" || ativo === "on";
+  }
+  const aulaIds = formData.get("aulaIds");
+  if (aulaIds) {
+    rawData.aulaIds = JSON.parse(aulaIds as string);
   }
 
   const validated = planoUpdateSchema.parse(rawData);

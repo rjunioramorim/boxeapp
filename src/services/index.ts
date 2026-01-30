@@ -6,3 +6,4 @@
  */
 
 export * from "./planos";
+export * from "./aulas";

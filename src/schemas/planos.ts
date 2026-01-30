@@ -22,6 +22,7 @@ export const planoSchema = z.object({
     .max(31, "Quantidade de dias não pode ser maior que 31")
     .optional(),
   ativo: z.boolean().optional(),
+  aulaIds: z.array(z.string().uuid()),
 });
 
 /**

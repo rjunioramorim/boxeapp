@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlanoForm } from "@/components/planos/plano-form";
 import { buscarPlano, atualizarPlano } from "@/actions/planos";
+import { listarAulas } from "@/actions/aulas";
 import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
 
@@ -13,7 +14,10 @@ export default async function EditarPlanoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const plano = await buscarPlano(id);
+  const [plano, aulas] = await Promise.all([
+    buscarPlano(id),
+    listarAulas()
+  ]);
 
   if (!plano) {
     notFound();
@@ -25,6 +29,7 @@ export default async function EditarPlanoPage({
     valor: string;
     qtdDias?: number;
     ativo?: boolean;
+    aulaIds: string[];
   }) {
     "use server";
     const formData = new FormData();
@@ -35,6 +40,7 @@ export default async function EditarPlanoPage({
       formData.append("qtdDias", data.qtdDias.toString());
     }
     formData.append("ativo", data.ativo ? "true" : "false");
+    formData.append("aulaIds", JSON.stringify(data.aulaIds));
 
     const result = await atualizarPlano(id, formData);
     if (result.success) {
@@ -64,7 +70,7 @@ export default async function EditarPlanoPage({
           <CardTitle>Informações do Plano</CardTitle>
         </CardHeader>
         <CardContent>
-          <PlanoForm plano={plano} onSubmit={handleSubmit} />
+          <PlanoForm plano={plano} aulas={aulas} onSubmit={handleSubmit} />
         </CardContent>
       </Card>
     </div>

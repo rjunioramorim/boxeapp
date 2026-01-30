@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -20,18 +21,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { planos } from "@/db/schema";
+import type { planos, aulas } from "@/db/schema";
 import { planoSchema, type PlanoFormValues } from "@/schemas/planos";
+import { Badge } from "@/components/ui/badge";
 
 type Plano = typeof planos.$inferSelect;
+type Aula = typeof aulas.$inferSelect;
 
 interface PlanoFormProps {
-  plano?: Plano | null;
+  plano?: (Plano & { aulaIds?: string[] }) | null;
+  aulas?: Aula[];
   onSubmit: (data: PlanoFormValues) => Promise<{ success: boolean; error?: string }>;
   onCancel?: () => void;
 }
 
-export function PlanoForm({ plano, onSubmit, onCancel }: PlanoFormProps) {
+export function PlanoForm({ plano, aulas = [], onSubmit, onCancel }: PlanoFormProps) {
   const form = useForm<PlanoFormValues>({
     resolver: zodResolver(planoSchema),
     defaultValues: {
@@ -40,6 +44,7 @@ export function PlanoForm({ plano, onSubmit, onCancel }: PlanoFormProps) {
       valor: plano?.valor || "",
       qtdDias: plano?.qtdDias || 3,
       ativo: plano?.ativo ?? true,
+      aulaIds: (plano?.aulaIds || []) as string[],
     },
   });
 
@@ -154,7 +159,7 @@ export function PlanoForm({ plano, onSubmit, onCancel }: PlanoFormProps) {
                 <Checkbox
                   checked={field.value}
                   onCheckedChange={field.onChange}
-                  className="min-h-[44px] min-w-[44px] touch-manipulation"
+                  className="min-h-[24px] min-w-[24px] touch-manipulation"
                 />
               </FormControl>
               <div className="space-y-1 leading-none">
@@ -165,6 +170,70 @@ export function PlanoForm({ plano, onSubmit, onCancel }: PlanoFormProps) {
             </FormItem>
           )}
         />
+
+        <div className="space-y-4">
+          <div className="flex flex-col gap-1">
+            <FormLabel>Aulas Vinculadas</FormLabel>
+            <p className="text-sm text-muted-foreground">
+              Selecione quais aulas pertencem a este plano.
+            </p>
+          </div>
+
+          <FormField
+            control={form.control}
+            name="aulaIds"
+            render={({ field }) => (
+              <FormItem>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {aulas.map((aula) => (
+                    <div
+                      key={aula.id}
+                      className="flex items-center space-x-3 rounded-md border p-4 hover:bg-accent cursor-pointer"
+                      onClick={() => {
+                        const current = field.value || [];
+                        const next = current.includes(aula.id)
+                          ? current.filter((id) => id !== aula.id)
+                          : [...current, aula.id];
+                        field.onChange(next);
+                      }}
+                    >
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value?.includes(aula.id)}
+                          onCheckedChange={() => {
+                            // Handled by the div click for better touch target
+                          }}
+                          className="min-h-[24px] min-w-[24px] touch-manipulation"
+                        />
+                      </FormControl>
+                      <div className="flex flex-1 flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{aula.nome}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {aula.horario.slice(0, 5)}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {aula.diasSemana.map((dia) => (
+                            <Badge key={dia} variant="outline" className="text-[10px] px-1 py-0 h-4">
+                              {["", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"][dia]}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {aulas.length === 0 && (
+                  <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-md">
+                    Nenhuma aula encontrada. <Link href="/aulas/novo" className="text-primary hover:underline">Cadastre aulas primeiro.</Link>
+                  </p>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         {form.formState.errors.root && (
           <div className="text-sm text-destructive">
