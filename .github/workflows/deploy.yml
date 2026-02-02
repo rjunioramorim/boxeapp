@@ -15,7 +15,11 @@ jobs:
     permissions:
       contents: read
       packages: write
-
+    
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,28 +44,29 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
 
-      - name: Build and push Docker image (multi-arch)
+      - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-
-          # 🔥 ESSENCIAL PARA VPS ARM
+           # 🔥 ESSENCIAL PARA VPS ARM
           platforms: linux/amd64,linux/arm64
 
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
           build-args: |
             NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
 
+  
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Portainer Webhook
         run: |
-          curl -X POST "${{ secrets.PORTAINER_WEBHOOK_URL }}"
+          curl -X POST ${{ secrets.PORTAINER_WEBHOOK_URL }}
+
+  
