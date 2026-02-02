@@ -1,10 +1,10 @@
 // src/db/index.ts
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
 
 let pool: Pool | null = null;
-let db: ReturnType<typeof drizzle> | null = null;
+let db: NodePgDatabase<typeof schema> | null = null;
 
 function createPool() {
   if (!process.env.DATABASE_URL) {
@@ -16,7 +16,7 @@ function createPool() {
   });
 }
 
-export function getDb() {
+export function getDb(): NodePgDatabase<typeof schema> {
   if (!db) {
     pool = createPool();
     db = drizzle(pool, { schema });
@@ -25,7 +25,7 @@ export function getDb() {
   return db;
 }
 
-export function getPool() {
+export function getPool(): Pool {
   if (!pool) {
     pool = createPool();
   }
