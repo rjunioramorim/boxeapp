@@ -34,3 +34,10 @@ export function calcularDataVencimento(referencia: Date, diaVencimento: number) 
 
   return min([dataDesejada, ultimoDia]);
 }
+
+export function formatCurrency(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value)
+}
