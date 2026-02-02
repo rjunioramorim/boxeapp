@@ -39,15 +39,15 @@ src/
 
 | Camada     | Onde              | Responsabilidade |
 |------------|-------------------|-------------------|
-| **Queries** | `lib/db/queries/` | CRUD puro no banco; tipos inferidos do schema Drizzle. |
-| **Schemas** | `lib/schemas/`    | Zod: schema de criação, `.partial()` para atualização; exportar `FormValues` e `UpdateValues`. |
-| **Services** | `lib/services/`   | Encapsular queries; validar ID e “não encontrado”; transformações simples. |
-| **Actions** | `lib/actions/`     | Autenticação (`requireAuth`), parse (FormData → objeto), validação Zod, chamar service, revalidar, retorno padronizado. |
+| **Queries** | `src/db/queries/` | CRUD puro no banco; tipos inferidos do schema Drizzle. |
+| **Schemas** | `src/schemas/`    | Zod: schema de criação, `.partial()` para atualização; exportar `FormValues` e `UpdateValues`. |
+| **Services** | `src/services/`   | Encapsular queries; validar ID e “não encontrado”; transformações simples. |
+| **Actions** | `src/actions/`     | Autenticação (`requireAuth`), parse (FormData → objeto), validação Zod, chamar service, revalidar, retorno padronizado. |
 | **UI**      | `components/` + `app/` | Formulários (react-hook-form + zod), listagem mobile-first, páginas que disparam actions. |
 
 ---
 
-## 3. Queries (`lib/db/queries/<entidade>.ts`)
+## 3. Queries (`src/db/queries/<entidade>.ts`)
 
 - **Funções típicas:** `getAll`, `getById`, `create`, `update`, `delete`.
 - **Extras conforme necessidade:** `getByXId` (ex: aulas por plano), tipos compostos (ex: `PlanoWithAulas`).
@@ -187,12 +187,12 @@ type ActionResult =
 
 ## 10. Checklist por nova entidade CRUD
 
-- [ ] `lib/db/queries/<entidade>.ts`: getAll, getById, create, update, delete (+ getByX se N:N).
-- [ ] `lib/schemas/<entidade>.ts`: schema Zod, partial, FormValues, UpdateValues; export em `schemas/index.ts`.
-- [ ] `lib/services/<entidade>.ts`: listar, buscar (throw/null), criar, atualizar, deletar.
-- [ ] `lib/actions/<entidade>.ts`: "use server", requireAuth, listar, buscar, criar, atualizar, deletar (retorno padronizado + revalidatePath).
+- [ ] `src/db/queries/<entidade>.ts`: getAll, getById, create, update, delete (+ getByX se N:N).
+- [ ] `src/schemas/<entidade>.ts`: schema Zod, partial, FormValues, UpdateValues; export em `schemas/index.ts`.
+- [ ] `src/services/<entidade>.ts`: listar, buscar (throw/null), criar, atualizar, deletar.
+- [ ] `src/actions/<entidade>.ts`: "use server", requireAuth, listar, buscar, criar, atualizar, deletar (retorno padronizado + revalidatePath).
 - [ ] `components/<entidade>/`: form, list, list-wrapper (mobile cards + desktop table, min-h 44px).
 - [ ] `app/(dashboard)/<entidade>/`: page.tsx, novo/page.tsx, [id]/editar/page.tsx.
 - [ ] Navegação: link no layout/nav do dashboard para `/<entidade>`.
 
-Referência de código: **Planos** (`src/lib/db/queries/planos.ts`, `src/lib/services/planos.ts`, `src/lib/actions/planos.ts`, `src/lib/schemas/planos.ts`, `src/components/planos/`, `src/app/(dashboard)/planos/`).
+Referência de código: **Planos** (`src/db/queries/planos.ts`, `src/services/planos.ts`, `src/actions/planos.ts`, `src/schemas/planos.ts`, `src/components/planos/`, `src/app/(dashboard)/planos/`).

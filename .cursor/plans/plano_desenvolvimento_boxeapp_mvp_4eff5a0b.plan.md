@@ -52,8 +52,8 @@ flowchart LR
 **Fazer:**
 
 1. **Drizzle** ✅ *Concluído*
-  - Criar `drizzle.config.ts` (driver pg, schema em `./lib/db/schema.ts`, out `./drizzle`).
-  - Criar `lib/db/index.ts` (export do client Drizzle usando `DATABASE_URL`).
+  - Criar `drizzle.config.ts` (driver pg, schema em `./src/db/schema.ts`, out `./drizzle`).
+  - Criar `src/db/index.ts` (export do client Drizzle usando `DATABASE_URL`).
   - Em `package.json`: scripts `db:generate`, `db:migrate`, `db:studio` (drizzle-kit).
 2. **Dependências** ✅ *Concluído*
   - Instalar: `next-auth`, `@auth/drizzle-adapter` (ou adapter manual), `react-hook-form`, `@hookform/resolvers`, `zod`, `date-fns`, `bcryptjs` + `@types/bcryptjs` (seeds).
@@ -76,7 +76,7 @@ flowchart LR
 
 ## FASE 2: Schema e autenticação (2 dias)
 
-1. **Schema Drizzle** (`lib/db/schema.ts`) ✅ *Concluído*
+1. **Schema Drizzle** (`src/db/schema.ts`) ✅ *Concluído*
   - Tabelas conforme PRD seção 3: `users`, `planos`, `aulas`, `planos_aulas`, `alunos`, `matriculas`, `matriculas_aulas`, `pagamentos`, `agendamentos`.
   - Enums: tipo plano (INDIVIDUAL, COLETIVO), status aluno (ATIVO, INATIVO, SUSPENSO), status matrícula (ATIVA, CANCELADA, SUSPENSA), status pagamento (PENDENTE, PAGO, ATRASADO, CANCELADO), status agendamento (AGENDADO, PRESENTE, AUSENTE, CANCELADO), tipo agendamento (AUTOMATICO, MANUAL).
   - Campos: UUIDs, `planos.qtd_dias` (integer, default 3), `matriculas_aulas.horario` e `dias_semana` (nullable), demais conforme PRD.
@@ -85,7 +85,7 @@ flowchart LR
 2. **Migrations** ✅ *Concluído*
   - Rodar `npm run db:generate` e `npm run db:migrate` (local contra Postgres do compose). Migration gerada em `drizzle/0000_new_rocket_racer.sql`; aplicar quando Postgres estiver disponível com `DATABASE_URL` correta.
 3. **Seeds** ✅ *Concluído*
-  - Script `src/lib/db/seed.ts` que cria um usuário admin (email + hash bcrypt da senha) na tabela `users`. Executável com `npm run db:seed` ou `tsx src/lib/db/seed.ts`.
+  - Script `src/db/seed.ts` que cria um usuário admin (email + hash bcrypt da senha) na tabela `users`. Executável com `npm run db:seed` ou `tsx src/db/seed.ts`.
   - Suporta variáveis de ambiente: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` (valores padrão se não definidos).
   - Verifica se usuário já existe antes de criar.
 4. **NextAuth** ✅ *Concluído*
@@ -104,7 +104,7 @@ flowchart LR
 
 ## FASE 3: CRUD de Planos (1-2 dias) ✅ *Concluído*
 
-1. **Queries** em `lib/db/queries/planos.ts`: `getAll`, `getById`, `create`, `update`, `delete` (e listar com aulas vinculadas, se necessário para o form).
+1. **Queries** em `src/db/queries/planos.ts`: `getAll`, `getById`, `create`, `update`, `delete` (e listar com aulas vinculadas, se necessário para o form).
 2. **Server Actions** em `app/(dashboard)/planos/actions.ts` (ou `lib/actions/planos.ts`): create, update, delete; validação com zod; chamar queries.
 3. **Layout dashboard (mobile-first)**
   - Grupo de rotas `(dashboard)`: `app/(dashboard)/layout.tsx` com:
@@ -128,7 +128,7 @@ flowchart LR
 
 ## FASE 4: CRUD de Aulas (1-2 dias) ✅ *Concluído*
 
-1. **Queries** em `lib/db/queries/aulas.ts`: getAll, getById, getByPlanoId (aulas de um plano), create, update, delete.
+1. **Queries** em `src/db/queries/aulas.ts`: getAll, getById, getByPlanoId (aulas de um plano), create, update, delete.
 2. **Server Actions** para aulas (create, update, delete) e para vínculo planos-aulas (associar/desassociar aulas a um plano).
 3. **Páginas**: listagem, novo, [id]/editar (mesmo padrão do Planos).
 4. **Componentes (mobile-first)**
@@ -299,7 +299,7 @@ flowchart LR
 
 | ---- | ---------- | --------------------------------------------------- |
 
-| 1    | —          | Drizzle config, lib/db, deps, shadcn                |
+| 1    | —          | Drizzle config, src/db, deps, shadcn                |
 
 | 2    | 1          | Schema, migrations, seeds, NextAuth, login          |
 

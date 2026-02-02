@@ -53,6 +53,7 @@ export async function incluirAlunoAgendamento(data: {
     horario: string;
 }) {
     await requireAuth();
+
     try {
         // Buscar matrícula ativa do aluno
         const matricula = await db.query.matriculas.findFirst({
@@ -90,6 +91,7 @@ export async function incluirAlunoAgendamento(data: {
  */
 export async function listarAlunosAtivos() {
     await requireAuth();
+
     try {
         return await db.query.alunos.findMany({
             where: eq(alunos.status, "ATIVO"),

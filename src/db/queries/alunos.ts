@@ -37,6 +37,7 @@ export async function getAllAlunos(filters?: {
  * Busca um aluno por ID com seus detalhes (matrícula ativa, pagamentos, agendamentos)
  */
 export async function getAlunoById(id: string) {
+
     const aluno = await db.query.alunos.findFirst({
         where: eq(alunos.id, id),
         with: {
@@ -91,6 +92,7 @@ export async function createAluno(data: {
     email?: string;
     status: "ATIVO" | "INATIVO" | "SUSPENSO";
 }) {
+
     const [novoAluno] = await db.insert(alunos).values(data).returning();
     return novoAluno;
 }

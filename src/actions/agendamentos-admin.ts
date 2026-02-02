@@ -14,6 +14,7 @@ import { revalidatePath } from "next/cache";
 export async function limparERecriarAgendamentos(matriculaId: string, alunoId: string) {
     await requireAuth();
 
+
     try {
         // Buscar matrícula com suas aulas
         const matricula = await db.query.matriculas.findFirst({

@@ -1,32 +1,47 @@
-# Dockerfile multi-stage para Next.js com otimizações de produção
+# Dockerfile Multi-Stage Otimizado para Next.js + Drizzle
+# Versão com cache inteligente de dependências
 
-FROM node:20-alpine AS deps
+FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copiar apenas arquivos de dependências
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+# Instalar dependências baseado no package-lock
+FROM base AS deps
 
-# Builder stage
-FROM node:20-alpine AS builder
+# Copiar apenas arquivos de dependências
+COPY package.json package-lock.json* ./
+
+# Instalar dependências de produção
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# Instalar todas as dependências (incluindo dev) em outra camada
+FROM base AS deps-dev
+COPY package.json package-lock.json* ./
+RUN npm ci && \
+    npm cache clean --force
+
+# Builder - compila a aplicação
+FROM base AS builder
 WORKDIR /app
 
-# Copiar dependências do stage anterior
-COPY --from=deps /app/node_modules ./node_modules
+# Copiar dependências com devDependencies
+COPY --from=deps-dev /app/node_modules ./node_modules
+
+# Copiar código fonte
 COPY . .
 
-# Build args para variáveis de ambiente públicas
+# Build args
 ARG NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Gerar Drizzle client e build Next.js
-RUN npm run db:generate && \
-    npm run build
+# Gerar Drizzle schema e build Next.js
+RUN DATABASE_URL="postgresql://postgres:docker@localhost:5432/boxeapp" npm run db:generate
+RUN DATABASE_URL="postgresql://postgres:docker@localhost:5432/boxeapp" npm run build
 
-# Production stage
-FROM node:20-alpine AS runner
+# Runner - imagem de produção
+FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -36,16 +51,22 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copiar arquivos necessários
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/drizzle ./drizzle
+# Copiar apenas node_modules de produção
+COPY --from=deps /app/node_modules ./node_modules
 
-# Copiar scripts de migração
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/drizzle.config.ts ./
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+# Copiar arquivos do build
+COPY --from=builder /app/public ./public
+
+# Copiar output standalone do Next.js
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copiar migrations do Drizzle
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
+
+# Copiar configs necessários
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./drizzle.config.ts
 
 USER nextjs
 
@@ -54,7 +75,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Healthcheck
+# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 

@@ -1,7 +1,7 @@
 /**
  * Script de seed para criar usuário admin inicial
  * Executar com: npm run db:seed
- * ou: tsx src/lib/db/seed.ts
+ * ou: tsx src/db/seed.ts
  */
 
 // IMPORTANTE: Carregar variáveis de ambiente ANTES de importar o db

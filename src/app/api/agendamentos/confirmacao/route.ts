@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { webhookService } from "@/services/webhook";
 
+
+
 // Schema de validação
 const confirmacaoSchema = z.object({
     telefone: z.string().min(8, "Telefone inválido"),
     aula: z.string().min(1, "Aula é obrigatória"),
     horario: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Horário inválido (HH:mm)"),
-    text: z.enum(["1", "2"], { errorMap: () => ({ message: "Status deve ser 1 ou 2" }) }),
+    text: z.enum(["1", "2"], { message: "Status deve ser 1 ou 2" }),
     codigo_identificacao: z.string().optional(), // Opcional no schema, mas validado no service se enviado
 });
 
