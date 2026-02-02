@@ -88,6 +88,19 @@ services:
       retries: 3
       start_period: 40s
 
+  migrate:
+    image: ghcr.io/rjunioramorim/boxeapp:latest
+    command: ["npm", "run", "db:migrate"]
+    networks:
+      - network_public
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+    deploy:
+      restart_policy:
+        condition: none
+      replicas: 1    
+
 networks:
   network_public:
     external: true
