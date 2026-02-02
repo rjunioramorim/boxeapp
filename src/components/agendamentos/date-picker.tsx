@@ -22,17 +22,19 @@ interface DatePickerProps {
 export function DatePicker({ date }: DatePickerProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const [open, setOpen] = React.useState(false);
 
     const handleSelect = (newDate: Date | undefined) => {
         if (newDate) {
             const params = new URLSearchParams(searchParams.toString());
             params.set("data", format(newDate, "yyyy-MM-dd"));
             router.push(`/agendamentos?${params.toString()}`);
+            setOpen(false); // Fechar ao selecionar
         }
     };
 
     return (
-        <Popover>
+        <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
                     variant={"outline"}

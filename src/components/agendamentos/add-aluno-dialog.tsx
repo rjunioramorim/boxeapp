@@ -70,18 +70,23 @@ interface AddAlunoDialogProps {
     aulas: Aula[];
     dataSelecionada: Date;
     agendamentos: Agendamento[];
+    aulaPreSelecionada?: string;
 }
 
-export function AddAlunoDialog({ alunos, aulas, dataSelecionada, agendamentos }: AddAlunoDialogProps) {
+export function AddAlunoDialog({ alunos, aulas, dataSelecionada, agendamentos, aulaPreSelecionada }: AddAlunoDialogProps) {
     const [isPending, startTransition] = useTransition();
     const [open, setOpen] = useState(false);
     const [openCombobox, setOpenCombobox] = useState(false);
     const [searchValue, setSearchValue] = useState("");
+
+    // Encontrar horário da aula pré-selecionada, se houver
+    const aulaPre = aulaPreSelecionada ? aulas.find(a => a.id === aulaPreSelecionada) : undefined;
+
     const [formData, setFormData] = useState({
         alunoId: "",
-        aulaId: "",
+        aulaId: aulaPreSelecionada || "",
         data: format(dataSelecionada, "yyyy-MM-dd"),
-        horario: "",
+        horario: aulaPre?.horario || "",
     });
 
     // Filtrar alunos disponíveis baseado na aula selecionada

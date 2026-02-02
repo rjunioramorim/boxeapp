@@ -44,12 +44,7 @@ export default async function AgendamentosPage({
                         Controle a frequência dos alunos nas aulas.
                     </p>
                 </div>
-                <AddAlunoDialog
-                    dataSelecionada={dataSelecionada}
-                    alunos={alunos}
-                    aulas={aulas}
-                    agendamentos={agendamentos}
-                />
+                {/* Botão de adicionar aluno removido daqui, movido para dentro da lista por aula */}
             </div>
 
             {/* Seletor de Data Mobile/Compacto */}
@@ -76,7 +71,12 @@ export default async function AgendamentosPage({
 
             <div className="mt-8">
                 <Suspense fallback={<div className="h-64 flex items-center justify-center">Carregando chamada...</div>}>
-                    <AgendamentoList agendamentos={agendamentos} />
+                    <AgendamentoList
+                        agendamentos={agendamentos}
+                        aulas={aulas}
+                        alunos={alunos}
+                        dataSelecionada={dataSelecionada}
+                    />
                 </Suspense>
             </div>
         </div>
