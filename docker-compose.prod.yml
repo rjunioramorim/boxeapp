@@ -9,30 +9,22 @@ services:
 
     environment:
       NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL}
+
+      # URL pública do app (usada no build e runtime)
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
 
-      DB_PASSWORD_FILE: /run/secrets/db_password
-      JWT_SECRET_FILE: /run/secrets/jwt_secret
-
-    secrets:
-      - db_password
-      - jwt_secret
+      # Banco (definido no Portainer)
+      DATABASE_URL: ${DATABASE_URL}
 
     deploy:
       mode: replicated
       replicas: 2
 
-      placement:
-        constraints:
-          - node.platform.arch == arm64
-
       update_config:
         parallelism: 1
         delay: 10s
-        failure_action: rollback
-        monitor: 30s
         order: start-first
+        failure_action: rollback
 
       rollback_config:
         parallelism: 1
@@ -54,26 +46,34 @@ services:
           memory: 256M
 
       labels:
-        - "traefik.enable=true"
-        - "traefik.docker.network=network_public"
+        # =====================
+        # Traefik
+        # =====================
+        - traefik.enable=true
+        - traefik.docker.network=network_public
 
-        - "traefik.http.routers.${STACK_NAME:-app}.rule=Host(`${APP_DOMAIN}`)"
-        - "traefik.http.routers.${STACK_NAME:-app}.entrypoints=websecure"
-        - "traefik.http.routers.${STACK_NAME:-app}.tls.certresolver=letsencrypt"
+        # Router
+        - traefik.http.routers.${STACK_NAME:-app}.rule=Host(`${APP_DOMAIN}`)
+        - traefik.http.routers.${STACK_NAME:-app}.entrypoints=websecure
+        - traefik.http.routers.${STACK_NAME:-app}.tls.certresolver=letsencrypt
 
-        - "traefik.http.services.${STACK_NAME:-app}.loadbalancer.server.port=3000"
-        - "traefik.http.services.${STACK_NAME:-app}.loadbalancer.healthcheck.path=/api/health"
-        - "traefik.http.services.${STACK_NAME:-app}.loadbalancer.healthcheck.interval=10s"
-        - "traefik.http.services.${STACK_NAME:-app}.loadbalancer.healthcheck.timeout=3s"
+        # Service
+        - traefik.http.services.${STACK_NAME:-app}.loadbalancer.server.port=3000
+        - traefik.http.services.${STACK_NAME:-app}.loadbalancer.healthcheck.path=/api/health
+        - traefik.http.services.${STACK_NAME:-app}.loadbalancer.healthcheck.interval=10s
+        - traefik.http.services.${STACK_NAME:-app}.loadbalancer.healthcheck.timeout=3s
 
-        - "traefik.http.routers.${STACK_NAME:-app}.middlewares=security-headers,rate-limit"
-        - "traefik.http.middlewares.security-headers.headers.framedeny=true"
-        - "traefik.http.middlewares.security-headers.headers.sslredirect=true"
-        - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
-        - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
-        - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
-        - "traefik.http.middlewares.rate-limit.ratelimit.average=100"
-        - "traefik.http.middlewares.rate-limit.ratelimit.burst=50"
+        # Middlewares
+        - traefik.http.routers.${STACK_NAME:-app}.middlewares=security-headers,rate-limit
+
+        - traefik.http.middlewares.security-headers.headers.framedeny=true
+        - traefik.http.middlewares.security-headers.headers.sslredirect=true
+        - traefik.http.middlewares.security-headers.headers.stsSeconds=31536000
+        - traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true
+        - traefik.http.middlewares.security-headers.headers.stsPreload=true
+
+        - traefik.http.middlewares.rate-limit.ratelimit.average=100
+        - traefik.http.middlewares.rate-limit.ratelimit.burst=50
 
     healthcheck:
       test:
@@ -86,17 +86,8 @@ services:
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 60s
+      start_period: 40s
 
 networks:
   network_public:
     external: true
-
-secrets:
-  db_password:
-    external: true
-    name: ${STACK_NAME:-app}_db_password
-
-  jwt_secret:
-    external: true
-    name: ${STACK_NAME:-app}_jwt_secret

@@ -26,6 +26,9 @@ export function getDb(): NodePgDatabase<typeof schema> {
 }
 
 export function getPool(): Pool {
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    throw new Error('DB acessado durante build');
+  }
   if (!pool) {
     pool = createPool();
   }
