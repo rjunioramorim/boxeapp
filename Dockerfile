@@ -37,8 +37,8 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Gerar Drizzle schema e build Next.js
-RUN DATABASE_URL="postgresql://postgres:docker@localhost:5432/boxeapp" npm run db:generate
-RUN DATABASE_URL="postgresql://postgres:docker@localhost:5432/boxeapp" npm run build
+RUN npm run db:generate
+RUN npm run build
 
 # Runner - imagem de produção
 FROM base AS runner
