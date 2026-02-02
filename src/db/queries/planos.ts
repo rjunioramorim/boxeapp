@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { planos, aulas } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -9,6 +9,7 @@ type TipoPlano = "INDIVIDUAL" | "COLETIVO";
  * Lista todos os planos
  */
 export async function getAllPlanos() {
+  const db = getDb();
   return await db.select().from(planos).orderBy(desc(planos.createdAt));
 }
 
@@ -17,6 +18,7 @@ export async function getAllPlanos() {
  * Busca um plano por ID
  */
 export async function getPlanoById(id: string) {
+  const db = getDb();
   const [plano] = await db.select().from(planos).where(eq(planos.id, id));
   return plano || null;
 }
@@ -32,6 +34,7 @@ export async function createPlano(data: {
   qtdDias?: number;
   ativo?: boolean;
 }) {
+  const db = getDb();
   const [novoPlano] = await db
     .insert(planos)
     .values({
@@ -59,6 +62,7 @@ export async function updatePlano(
     ativo?: boolean;
   }
 ) {
+  const db = getDb();
   const [planoAtualizado] = await db
     .update(planos)
     .set(data)
@@ -72,6 +76,7 @@ export async function updatePlano(
  * Deleta um plano
  */
 export async function deletePlano(id: string) {
+  const db = getDb();
   const [planoDeletado] = await db
     .delete(planos)
     .where(eq(planos.id, id))

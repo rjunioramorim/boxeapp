@@ -1,10 +1,11 @@
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { alunos, pagamentos, agendamentos, aulas } from "@/db/schema";
 import { eq, and, sql, gte, lte } from "drizzle-orm";
 import { startOfMonth, endOfMonth, startOfDay, endOfDay, format } from "date-fns";
 
 export const dashboardQueries = {
     getStats: async () => {
+        const db = getDb();
         const hoje = new Date();
         const inicioMes = startOfMonth(hoje);
         const fimMes = endOfMonth(hoje);

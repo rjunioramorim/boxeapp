@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { agendamentos, aulas, alunos, matriculas } from "@/db/schema";
 import { eq, and, between, asc, desc, sql } from "drizzle-orm";
 import { startOfDay, endOfDay } from "date-fns";
@@ -7,6 +7,7 @@ import { startOfDay, endOfDay } from "date-fns";
  * Busca agendamentos de um dia específico, agrupados ou detalhados
  */
 export async function getAgendamentosPordia(data: Date) {
+    const db = getDb();
     const start = startOfDay(data);
     const end = endOfDay(data);
 
@@ -39,6 +40,7 @@ export async function getAgendamentosPordia(data: Date) {
  * Busca TODOS os agendamentos de um dia (incluindo presentes/ausentes)
  */
 export async function getRelatorioPresencaDia(data: Date) {
+    const db = getDb();
     const start = startOfDay(data);
     const end = endOfDay(data);
 
@@ -69,6 +71,7 @@ export async function getRelatorioPresencaDia(data: Date) {
  * Atualiza o status de presença (PRESENTE, AUSENTE, AGENDADO)
  */
 export async function updateStatusPresenca(id: string, status: "AGENDADO" | "PRESENTE" | "AUSENTE" | "CANCELADO") {
+    const db = getDb();
     const [agendamento] = await db
         .update(agendamentos)
         .set({
@@ -91,6 +94,7 @@ export async function agendarManual(data: {
     data: Date;
     horario: string;
 }) {
+    const db = getDb();
     const [novoAgendamento] = await db
         .insert(agendamentos)
         .values({
@@ -107,6 +111,7 @@ export async function agendarManual(data: {
  * Busca agendamentos futuros de um aluno para uma aula
  */
 export async function getAgendamentosFuturosAluno(alunoId: string, dataInicio: Date) {
+    const db = getDb();
     return await db
         .select()
         .from(agendamentos)

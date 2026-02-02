@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { agendamentos, matriculas } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { startOfDay, addDays } from "date-fns";
@@ -17,6 +17,7 @@ export async function limparERecriarAgendamentos(matriculaId: string, alunoId: s
 
     try {
         // Buscar matrícula com suas aulas
+        const db = getDb();
         const matricula = await db.query.matriculas.findFirst({
             where: eq(matriculas.id, matriculaId),
             with: {

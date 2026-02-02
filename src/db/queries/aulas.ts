@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { aulas, planosAulas } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -6,6 +6,7 @@ import { eq, desc } from "drizzle-orm";
  * Lista todas as aulas
  */
 export async function getAllAulas() {
+  const db = getDb();
   return await db.select().from(aulas).orderBy(desc(aulas.createdAt));
 }
 
@@ -13,6 +14,7 @@ export async function getAllAulas() {
  * Busca uma aula por ID
  */
 export async function getAulaById(id: string) {
+  const db = getDb();
   const [aula] = await db.select().from(aulas).where(eq(aulas.id, id));
   return aula || null;
 }
@@ -21,6 +23,7 @@ export async function getAulaById(id: string) {
  * Busca aulas vinculadas a um plano
  */
 export async function getAulasByPlanoId(planoId: string) {
+  const db = getDb();
   return await db
     .select({
       id: aulas.id,
@@ -41,6 +44,7 @@ export async function getAulasByPlanoId(planoId: string) {
  * Retorna IDs das aulas vinculadas a um plano
  */
 export async function getAulaIdsByPlanoId(planoId: string): Promise<string[]> {
+  const db = getDb();
   const rows = await db
     .select({ aulaId: planosAulas.aulaId })
     .from(planosAulas)
@@ -60,6 +64,7 @@ export async function createAula(data: {
   capacidadeMaxima: number;
   ativo?: boolean;
 }) {
+  const db = getDb();
   const [novaAula] = await db
     .insert(aulas)
     .values({
@@ -89,6 +94,7 @@ export async function updateAula(
     ativo?: boolean;
   }
 ) {
+  const db = getDb();
   const set: Record<string, unknown> = {};
   if (data.nome !== undefined) set.nome = data.nome;
   if (data.diasSemana !== undefined) set.diasSemana = data.diasSemana;
@@ -112,6 +118,7 @@ export async function updateAula(
  * Deleta uma aula
  */
 export async function deleteAula(id: string) {
+  const db = getDb();
   const [aulaDeletada] = await db
     .delete(aulas)
     .where(eq(aulas.id, id))
@@ -124,6 +131,7 @@ export async function deleteAula(id: string) {
  * Define as aulas vinculadas a um plano (substitui as atuais)
  */
 export async function setAulasDoPlano(planoId: string, aulaIds: string[]) {
+  const db = getDb();
   await db.delete(planosAulas).where(eq(planosAulas.planoId, planoId));
 
   if (aulaIds.length === 0) return;

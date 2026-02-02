@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { getDb } from "@/db";
 import {
     matriculas,
     matriculasAulas,
@@ -14,6 +14,7 @@ import { calcularDataVencimento } from "@/lib/utils";
  * Busca matrícula por ID
  */
 export async function getMatriculaById(id: string) {
+    const db = getDb();
     return await db.query.matriculas.findFirst({
         where: eq(matriculas.id, id),
         with: {

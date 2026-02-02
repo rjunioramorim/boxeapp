@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { pagamentos, matriculas, alunos, matriculasAulas, agendamentos } from "@/db/schema";
 import { eq, and, desc, asc, between, ilike, or } from "drizzle-orm";
 import { startOfMonth, endOfMonth, addMonths, addDays } from "date-fns";
@@ -29,6 +29,7 @@ export async function getAllPagamentos(filters?: {
         whereClauses.push(eq(pagamentos.status, filters.status));
     }
 
+    const db = getDb();
     const baseQuery = db
         .select({
             id: pagamentos.id,
@@ -61,6 +62,7 @@ export async function getAllPagamentos(filters?: {
  * Busca pagamento por ID
  */
 export async function getPagamentoById(id: string) {
+    const db = getDb();
     return await db.query.pagamentos.findFirst({
         where: eq(pagamentos.id, id),
         with: {
@@ -82,6 +84,7 @@ export async function confirmarPagamento(id: string, data: {
     dataPagamento: Date;
     observacoes?: string;
 }) {
+    const db = getDb();
     return await db.transaction(async (tx) => {
         // 1. Atualizar pagamento atual
         const [pagamentoAtualizado] = await tx
@@ -179,6 +182,7 @@ export async function confirmarPagamento(id: string, data: {
  * Cancela um pagamento
  */
 export async function cancelarPagamento(id: string) {
+    const db = getDb();
     const [pagamentoCancelado] = await db
         .update(pagamentos)
         .set({ status: "CANCELADO" })
@@ -201,6 +205,7 @@ export async function criarPagamentoManual(data: {
     dataPagamento?: Date;
     observacoes?: string;
 }) {
+    const db = getDb();
     const [novoPagamento] = await tx_or_db(db).insert(pagamentos).values({
         matriculaId: data.matriculaId,
         valorEsperado: data.valorEsperado,

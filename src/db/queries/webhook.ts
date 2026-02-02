@@ -1,10 +1,11 @@
 import { startOfDay, endOfDay, parse } from "date-fns";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { agendamentos, alunos, aulas, matriculas } from "@/db/schema";
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 
 export const webhookQueries = {
     getAlunoByTelefone: async (telefone: string) => {
+        const db = getDb();
         return await db.query.alunos.findFirst({
             where: eq(alunos.telefone, telefone),
         });
@@ -28,6 +29,7 @@ export const webhookQueries = {
     },
 
     getAgendamentoExistente: async (alunoId: string, data: Date, horario: string) => {
+        const db = getDb();
         return await db.query.agendamentos.findFirst({
             where: and(
                 eq(agendamentos.alunoId, alunoId),
@@ -42,6 +44,7 @@ export const webhookQueries = {
     },
 
     checkConflitoHorario: async (alunoId: string, data: Date, horario: string) => {
+        const db = getDb();
         return await db.query.agendamentos.findFirst({
             where: and(
                 eq(agendamentos.alunoId, alunoId),
@@ -53,6 +56,7 @@ export const webhookQueries = {
     },
 
     findMatriculaAtiva: async (alunoId: string) => {
+        const db = getDb();
         return await db.query.matriculas.findFirst({
             where: and(
                 eq(matriculas.alunoId, alunoId),
@@ -62,10 +66,12 @@ export const webhookQueries = {
     },
 
     createAgendamento: async (data: typeof agendamentos.$inferInsert) => {
+        const db = getDb();
         return await db.insert(agendamentos).values(data).returning();
     },
 
     updateStatusAgendamento: async (id: string, status: "AGENDADO" | "PRESENTE" | "AUSENTE" | "CANCELADO") => {
+        const db = getDb();
         return await db
             .update(agendamentos)
             .set({ status, updatedAt: new Date() })

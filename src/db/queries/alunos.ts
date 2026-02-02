@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { alunos, matriculas, pagamentos, agendamentos } from "@/db/schema";
 import { eq, ilike, and, desc, or } from "drizzle-orm";
 
@@ -26,6 +26,7 @@ export async function getAllAlunos(filters?: {
         whereClauses.push(eq(alunos.status, filters.status));
     }
 
+    const db = getDb();
     return await db
         .select()
         .from(alunos)
@@ -37,7 +38,7 @@ export async function getAllAlunos(filters?: {
  * Busca um aluno por ID com seus detalhes (matrícula ativa, pagamentos, agendamentos)
  */
 export async function getAlunoById(id: string) {
-
+    const db = getDb();
     const aluno = await db.query.alunos.findFirst({
         where: eq(alunos.id, id),
         with: {
@@ -92,7 +93,7 @@ export async function createAluno(data: {
     email?: string;
     status: "ATIVO" | "INATIVO" | "SUSPENSO";
 }) {
-
+    const db = getDb();
     const [novoAluno] = await db.insert(alunos).values(data).returning();
     return novoAluno;
 }
@@ -109,6 +110,7 @@ export async function updateAluno(
         status?: "ATIVO" | "INATIVO" | "SUSPENSO";
     }
 ) {
+    const db = getDb();
     const [alunoAtualizado] = await db
         .update(alunos)
         .set(data)
@@ -121,6 +123,7 @@ export async function updateAluno(
  * Deleta um aluno
  */
 export async function deleteAluno(id: string) {
+    const db = getDb();
     const [alunoDeletado] = await db
         .delete(alunos)
         .where(eq(alunos.id, id))

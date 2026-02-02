@@ -7,7 +7,7 @@ import {
     agendarManualService,
 } from "@/services/agendamentos";
 import { requireAuth } from "@/lib/auth";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { alunos, matriculas } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -55,6 +55,7 @@ export async function incluirAlunoAgendamento(data: {
     await requireAuth();
 
     try {
+        const db = getDb();
         // Buscar matrícula ativa do aluno
         const matricula = await db.query.matriculas.findFirst({
             where: and(
@@ -93,6 +94,7 @@ export async function listarAlunosAtivos() {
     await requireAuth();
 
     try {
+        const db = getDb();
         return await db.query.alunos.findMany({
             where: eq(alunos.status, "ATIVO"),
             orderBy: (alunos, { asc }) => [asc(alunos.nome)],
