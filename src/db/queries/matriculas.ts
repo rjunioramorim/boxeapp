@@ -33,6 +33,7 @@ export async function getMatriculaById(id: string) {
  * Busca matrícula ativa de um aluno
  */
 export async function getMatriculaAtivaPorAluno(alunoId: string) {
+    const db = getDb();
     return await db.query.matriculas.findFirst({
         where: and(eq(matriculas.alunoId, alunoId), eq(matriculas.status, "ATIVA")),
         with: {
@@ -61,6 +62,7 @@ export async function createMatriculaCompleta(data: {
         horario: string;
     }[];
 }) {
+    const db = getDb();
     return await db.transaction(async (tx) => {
         if (!data.alunoId) {
             throw new Error("ID do aluno é obrigatório para criar matrícula");
@@ -153,6 +155,7 @@ export async function createMatriculaCompleta(data: {
  * Atualiza status de uma matrícula
  */
 export async function updateMatriculaStatus(id: string, status: "ATIVA" | "CANCELADA" | "SUSPENSA") {
+    const db = getDb();
     const [matriculaAtualizada] = await db
         .update(matriculas)
         .set({ status })
@@ -173,6 +176,7 @@ export async function updateMatriculaAulas(
     }[],
     dataVencimentoProximo: Date
 ) {
+    const db = getDb();
     return await db.transaction(async (tx) => {
         const agora = new Date();
         const hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));
