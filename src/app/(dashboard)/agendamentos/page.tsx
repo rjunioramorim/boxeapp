@@ -48,6 +48,7 @@ export default async function AgendamentosPage({
                     dataSelecionada={dataSelecionada}
                     alunos={alunos}
                     aulas={aulas}
+                    agendamentos={agendamentos}
                 />
             </div>
 
