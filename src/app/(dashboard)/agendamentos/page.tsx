@@ -1,10 +1,13 @@
 import { Suspense } from "react";
-import { format, addDays, subDays } from "date-fns";
+import { format, addDays, subDays, parseISO } from "date-fns";
 import { formatarDataDB } from "@/lib/utils";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AgendamentoList } from "@/components/agendamentos/agendamento-list";
-import { listarAgendamentosDia } from "@/actions/agendamentos";
+import { listarAgendamentosDia, listarAlunosAtivos } from "@/actions/agendamentos";
+import { listarAulas } from "@/actions/aulas";
+import { DatePicker } from "@/components/agendamentos/date-picker";
+import { AddAlunoDialog } from "@/components/agendamentos/add-aluno-dialog";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export const metadata = {
@@ -19,9 +22,15 @@ export default async function AgendamentosPage({
 }) {
     const params = await searchParams;
     const dataSelecionadaStr = params.data || format(new Date(), "yyyy-MM-dd");
-    const dataSelecionada = new Date(dataSelecionadaStr);
 
-    const agendamentos = await listarAgendamentosDia(dataSelecionadaStr);
+    // Usar parseISO para evitar problemas de fuso horário ao ler strings YYYY-MM-DD
+    const dataSelecionada = parseISO(dataSelecionadaStr);
+
+    const [agendamentos, alunos, aulas] = await Promise.all([
+        listarAgendamentosDia(dataSelecionadaStr),
+        listarAlunosAtivos(),
+        listarAulas(),
+    ]);
 
     const prevDay = format(subDays(dataSelecionada, 1), "yyyy-MM-dd");
     const nextDay = format(addDays(dataSelecionada, 1), "yyyy-MM-dd");
@@ -35,10 +44,11 @@ export default async function AgendamentosPage({
                         Controle a frequência dos alunos nas aulas.
                     </p>
                 </div>
-                <Button disabled className="min-h-[44px] touch-manipulation">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Aluno
-                </Button>
+                <AddAlunoDialog
+                    dataSelecionada={dataSelecionada}
+                    alunos={alunos}
+                    aulas={aulas}
+                />
             </div>
 
             {/* Seletor de Data Mobile/Compacto */}
@@ -53,12 +63,7 @@ export default async function AgendamentosPage({
                     <span className="text-sm font-bold text-primary uppercase tracking-tighter">
                         {formatarDataDB(dataSelecionada, "EEEE")}
                     </span>
-                    <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-lg font-black tracking-tight">
-                            {formatarDataDB(dataSelecionada, "dd 'de' MMMM")}
-                        </span>
-                    </div>
+                    <DatePicker date={dataSelecionada} />
                 </div>
 
                 <Button asChild variant="ghost" size="icon" className="h-12 w-12">

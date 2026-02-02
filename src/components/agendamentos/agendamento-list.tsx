@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -10,14 +10,11 @@ import {
     Circle,
     XCircle,
     MoreVertical,
-    ChevronDown,
-    ChevronUp
+    Trash2
 } from "lucide-react";
 import {
     Card,
     CardContent,
-    CardHeader,
-    CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,8 +24,17 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { marcarPresenca } from "@/actions/agendamentos";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Agendamento {
     id: string;
@@ -50,6 +56,12 @@ interface AgendamentoListProps {
 
 export function AgendamentoList({ agendamentos }: AgendamentoListProps) {
     const [isPending, startTransition] = useTransition();
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean;
+        id: string;
+        nome: string;
+        status: "PRESENTE" | "AUSENTE" | "AGENDADO" | "REMOVER";
+    }>({ open: false, id: "", nome: "", status: "AGENDADO" });
 
     // Agrupar por Aula e Horário
     const grupos = agendamentos.reduce((acc, current) => {
@@ -65,10 +77,26 @@ export function AgendamentoList({ agendamentos }: AgendamentoListProps) {
         return acc;
     }, {} as Record<string, { aulaNome: string; horario: string; alunos: Agendamento[] }>);
 
-    const handleStatusChange = (id: string, newStatus: "PRESENTE" | "AUSENTE" | "AGENDADO") => {
+    const handleStatusChange = (id: string, newStatus: "PRESENTE" | "AUSENTE" | "AGENDADO" | "REMOVER") => {
+        if (newStatus === "REMOVER") {
+            // Lógica de remoção seria aqui. Por enquanto vamos focar no que foi pedido.
+            // O usuário pediu "exibir dialog confirmando presença ou falta do aluno"
+            return;
+        }
+
         startTransition(async () => {
-            await marcarPresenca(id, newStatus);
+            const result = await marcarPresenca(id, newStatus as "PRESENTE" | "AUSENTE" | "AGENDADO") as any;
+            if (result.success) {
+                toast.success(`Status atualizado para ${newStatus.toLowerCase()}`);
+            } else {
+                toast.error(result.error || "Erro ao atualizar status");
+            }
+            setConfirmDialog({ ...confirmDialog, open: false });
         });
+    };
+
+    const openConfirm = (id: string, nome: string, status: "PRESENTE" | "AUSENTE" | "AGENDADO" | "REMOVER") => {
+        setConfirmDialog({ open: true, id, nome, status });
     };
 
     if (agendamentos.length === 0) {
@@ -141,7 +169,7 @@ export function AgendamentoList({ agendamentos }: AgendamentoListProps) {
                                                 "h-10 w-10 text-green-600 hover:bg-green-100",
                                                 aluno.status === 'PRESENTE' && "bg-green-100"
                                             )}
-                                            onClick={() => handleStatusChange(aluno.id, 'PRESENTE')}
+                                            onClick={() => openConfirm(aluno.id, aluno.aluno.nome, 'PRESENTE')}
                                             disabled={isPending}
                                         >
                                             <CheckCircle2 className="h-5 w-5" />
@@ -153,7 +181,7 @@ export function AgendamentoList({ agendamentos }: AgendamentoListProps) {
                                                 "h-10 w-10 text-red-600 hover:bg-red-100",
                                                 aluno.status === 'AUSENTE' && "bg-red-100"
                                             )}
-                                            onClick={() => handleStatusChange(aluno.id, 'AUSENTE')}
+                                            onClick={() => openConfirm(aluno.id, aluno.aluno.nome, 'AUSENTE')}
                                             disabled={isPending}
                                         >
                                             <XCircle className="h-5 w-5" />
@@ -169,7 +197,11 @@ export function AgendamentoList({ agendamentos }: AgendamentoListProps) {
                                                 <DropdownMenuItem onClick={() => handleStatusChange(aluno.id, 'AGENDADO')}>
                                                     Resetar Status
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive">
+                                                <DropdownMenuItem
+                                                    className="text-destructive"
+                                                    onClick={() => openConfirm(aluno.id, aluno.aluno.nome, 'REMOVER')}
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" />
                                                     Remover Aluno
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -181,6 +213,31 @@ export function AgendamentoList({ agendamentos }: AgendamentoListProps) {
                     </div>
                 </section>
             ))}
+
+            <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirmar Ação</DialogTitle>
+                        <DialogDescription>
+                            Deseja confirmar a {confirmDialog.status === 'PRESENTE' ? 'presença' :
+                                confirmDialog.status === 'AUSENTE' ? 'falta' : 'remoção'}
+                            de <strong>{confirmDialog.nome}</strong>?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))}>
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant={confirmDialog.status === 'AUSENTE' || confirmDialog.status === 'REMOVER' ? 'destructive' : 'default'}
+                            onClick={() => handleStatusChange(confirmDialog.id, confirmDialog.status)}
+                            disabled={isPending}
+                        >
+                            Confirmar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
