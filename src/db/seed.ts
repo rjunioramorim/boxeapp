@@ -11,7 +11,7 @@ import { resolve } from "path";
 // Carregar .env.local da raiz do projeto
 dotenv.config({ path: resolve(process.cwd(), ".env.local") });
 
-import { db } from "./index";
+import { getDb } from "./index";
 import { users } from "./schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -31,6 +31,7 @@ async function seed() {
     const adminName = process.env.ADMIN_NAME || "Administrador";
 
     // Verificar se já existe um usuário com esse email
+    const db = getDb();
     const existingUser = await db
       .select()
       .from(users)
