@@ -12,6 +12,7 @@ export const webhookQueries = {
     },
 
     getAulaByNomeOrId: async (identificador: string) => {
+        const db = getDb();
         // Tenta achar por ID uuid válido ou por nome (case insensitive)
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identificador);
 
