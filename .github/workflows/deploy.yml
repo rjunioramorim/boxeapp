@@ -61,10 +61,8 @@ jobs:
         run: |
           if [ -z "${{ secrets.PORTAINER_WEBHOOK }}" ]; then
             echo "❌ PORTAINER_WEBHOOK secret não está configurado!"
-            echo "Por favor, configure o secret PORTAINER_WEBHOOK no GitHub"
             exit 1
           fi
-          echo "✅ Webhook configurado"
 
       - name: 🚀 Trigger Portainer Webhook
         run: |
@@ -73,10 +71,6 @@ jobs:
             -s)
           
           http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
-          
-          echo "HTTP Status: $http_code"
-          echo "Response: $body"
           
           if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
             echo "✅ Webhook triggered successfully!"
@@ -89,4 +83,4 @@ jobs:
         run: sleep 30
         
       - name: ✅ Deployment completed
-        run: echo "Deployment webhook triggered and waiting for stack update!"
+        run: echo "Deployment triggered successfully!"
