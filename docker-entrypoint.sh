@@ -11,27 +11,29 @@ if [ -z "$DATABASE_URL" ]; then
   exit 1
 fi
 
+echo "✅ DATABASE_URL configurada"
+echo ""
 echo "📦 Executando migrations..."
-
-# Verificar se drizzle-kit existe
-if [ ! -f "./node_modules/.bin/drizzle-kit" ]; then
-  echo "❌ drizzle-kit não encontrado!"
-  echo "📁 Conteúdo de node_modules/.bin:"
-  ls -la node_modules/.bin/
-  exit 1
-fi
-
-echo "✅ drizzle-kit encontrado, executando migrations..."
 
 # Executar migrations
 ./node_modules/.bin/drizzle-kit push --verbose
 
 if [ $? -eq 0 ]; then
+  echo ""
   echo "✅ Migrations concluídas com sucesso!"
 else
+  echo ""
   echo "❌ Erro ao executar migrations!"
   exit 1
 fi
 
+# Opcional: Executar seed se necessário
+# if [ -f "./scripts/seed.js" ]; then
+#   echo ""
+#   echo "🌱 Executando seed..."
+#   node scripts/seed.js
+# fi
+
+echo ""
 echo "🎯 Iniciando servidor Next.js..."
 exec node server.js

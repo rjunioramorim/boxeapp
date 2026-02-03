@@ -1,4 +1,4 @@
-# Dockerfile
+# Dockerfile (versão mais simples e confiável)
 FROM node:20-alpine AS base
 
 # ============================================
@@ -47,8 +47,8 @@ COPY package.json package-lock.json* ./
 # Instalar deps de produção
 RUN npm ci --omit=dev
 
-# Instalar drizzle-kit e tsx (necessários para ler .ts files)
-RUN npm install drizzle-kit tsx
+# Instalar drizzle-kit separadamente (é devDependency)
+RUN npm install drizzle-kit
 
 # ============================================
 # RUNNER STAGE
@@ -72,50 +72,37 @@ ENV HOME=/home/nextjs
 
 RUN mkdir -p .next && chown -R nextjs:nodejs .next
 
-# ============================================
-# Copiar configs e package.json
-# ============================================
+# Package.json
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nextjs:nodejs /app/next.config.* ./
-COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./
 
-# ============================================
-# Copiar public assets
-# ============================================
+# Next.config
+COPY --from=builder --chown=nextjs:nodejs /app/next.config.* ./
+
+# Public assets
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# ============================================
-# Copiar Next.js build
-# ============================================
+# Next.js build
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# ============================================
-# CRITICAL: Copiar src/ para drizzle-kit ler o schema
-# ============================================
-COPY --from=builder --chown=nextjs:nodejs /app/src ./src
-
-# ============================================
-# Copiar Drizzle
-# ============================================
+# Drizzle
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./drizzle.config.ts
 
-# ============================================
-# Copiar Scripts
-# ============================================
+# Scripts
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
-# ============================================
-# Copiar node_modules de produção (inclui drizzle-kit e tsx)
-# ============================================
+# Node_modules de produção (inclui drizzle-kit)
 COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-# ============================================
 # Script de inicialização
-# ============================================
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
+
+# Verificar se drizzle-kit está disponível
+RUN echo "✅ Verificando drizzle-kit:" && \
+    ls -la node_modules/.bin/drizzle-kit && \
+    ls -la node_modules/drizzle-kit/
 
 USER nextjs
 
