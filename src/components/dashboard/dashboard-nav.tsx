@@ -15,6 +15,10 @@ import {
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 
+type DashboardNavProps = {
+  onNavigate?: () => void;
+};
+
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/planos", label: "Planos", icon: Package },
@@ -24,7 +28,7 @@ const navItems = [
   { href: "/agendamentos", label: "Agendamentos", icon: Calendar },
 ];
 
-export function DashboardNav() {
+export function DashboardNav({ onNavigate }: DashboardNavProps = {}) {
   const pathname = usePathname();
 
   return (
@@ -47,6 +51,7 @@ export function DashboardNav() {
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )}
+              onClick={onNavigate}
             >
               <Icon className="size-5" />
               <span>{item.label}</span>

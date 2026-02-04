@@ -23,7 +23,7 @@ export function DashboardHeader() {
   // Obter título da página atual
   const pageTitle =
     pageTitles[
-      Object.keys(pageTitles).find((key) => pathname?.startsWith(key)) || ""
+    Object.keys(pageTitles).find((key) => pathname?.startsWith(key)) || ""
     ] || "Dashboard";
 
   return (
@@ -41,7 +41,7 @@ export function DashboardHeader() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <DashboardNav />
+          <DashboardNav onNavigate={() => setIsOpen(false)} />
         </SheetContent>
       </Sheet>
 
