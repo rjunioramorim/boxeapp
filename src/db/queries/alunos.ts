@@ -90,7 +90,7 @@ export async function getAlunoById(id: string) {
 export async function createAluno(data: {
     nome: string;
     telefone: string;
-    email?: string;
+    email?: string | null;
     status: "ATIVO" | "INATIVO" | "SUSPENSO";
 }) {
     const db = getDb();

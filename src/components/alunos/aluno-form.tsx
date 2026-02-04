@@ -78,9 +78,36 @@ export function AlunoForm({ aluno, onSubmit, cancelHref }: AlunoFormProps) {
                                 <FormLabel>Telefone (WhatsApp)</FormLabel>
                                 <FormControl>
                                     <Input
-                                        placeholder="11999999999"
+                                        placeholder="(11) 99999-9999"
                                         type="tel"
-                                        {...field}
+                                        value={field.value}
+                                        onChange={(event) => {
+                                            const digits = event.target.value.replace(/\D/g, "").slice(0, 11);
+
+                                            if (!digits) {
+                                                field.onChange("");
+                                                return;
+                                            }
+
+                                            if (digits.length <= 2) {
+                                                field.onChange(`(${digits}`);
+                                                return;
+                                            }
+
+                                            if (digits.length <= 7) {
+                                                field.onChange(
+                                                    `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+                                                );
+                                                return;
+                                            }
+
+                                            field.onChange(
+                                                `(${digits.slice(0, 2)}) ${digits.slice(
+                                                    2,
+                                                    7
+                                                )}-${digits.slice(7)}`
+                                            );
+                                        }}
                                         className="min-h-[44px]"
                                     />
                                 </FormControl>
@@ -98,8 +125,8 @@ export function AlunoForm({ aluno, onSubmit, cancelHref }: AlunoFormProps) {
                                 <FormControl>
                                     <Input
                                         placeholder="joao@exemplo.com"
-                                        type="email"
                                         {...field}
+                                        value={field.value || ""}
                                         className="min-h-[44px]"
                                     />
                                 </FormControl>
