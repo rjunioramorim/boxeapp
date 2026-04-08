@@ -34,7 +34,7 @@ services:
         - "traefik.http.routers.app-http.entrypoints=web"
         - "traefik.http.routers.app.tls.certresolver=letsencryptresolver"
         - "traefik.http.services.app.loadbalancer.server.port=3000"
-        - "traefik.http.routers.app-http.middlewares=redirect-https@docker"  # Opcional
+        - "traefik.http.routers.app-http.middlewares=redirect-https@docker" 
         - "traefik.docker.network=network_public"
 
 networks:
