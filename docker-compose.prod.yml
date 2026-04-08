@@ -28,8 +28,8 @@ services:
         max_attempts: 3
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.app.rule=Host(`boxeapp.smarttcode.com.br`)"
-        - "traefik.http.routers.app-http.rule=Host(`boxeapp.smarttcode.com.br`)"
+        - "traefik.http.routers.app.rule=Host(`boxeapp.smartsolucoes.online`)"
+        - "traefik.http.routers.app-http.rule=Host(`boxeapp.smartsolucoes.online`)"
         - "traefik.http.routers.app.entrypoints=websecure"
         - "traefik.http.routers.app-http.entrypoints=web"
         - "traefik.http.routers.app.tls.certresolver=letsencryptresolver"
